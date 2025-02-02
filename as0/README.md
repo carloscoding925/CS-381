@@ -12,7 +12,7 @@ First, we want to gather some information about our window and text such as the 
 width using the `GetWidth()` and `GetHeight()` methods from the `Window` class and the text width <br />
 and height using the `Measure()` method for text width and `GetFontSize()` method for text height, <br />
 both coming from the `Text` class. To now calculate the width and height of our text with respect <br />
-to the window size, we use the formula `(windowWidthOrHeight - textWidthOrHeight) / 2` which we <br />
+to the window size, we use the formula `(windowWidth - textWidth) / 2` (same formula for height) which we <br />
 can save into a variable which stores the true position of the text, and in the `Draw()` method for <br />
 displaying text to the window we can insert our variables like so: `sampleString.Draw({trueX, trueY})` <br/>
 
