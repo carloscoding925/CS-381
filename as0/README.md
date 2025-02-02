@@ -38,7 +38,6 @@ compiled the code for as0. You may have noticed that in the `build` folder we ha
 - cd into the build folder: `cd as0/build`
 - run the following: `./as0` 
 <br/>
-<br/>
 Congratulations! You've successfully ran as0. <br />
 
 ## How to enumerate the controls for AS0
