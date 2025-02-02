@@ -34,8 +34,7 @@ Compiling the code within the as0 folder is easy and only takes a few steps. <br
 ## How to Run AS0
 If you successfully followed the steps in the How to Compile section above, you should have successfully <br />
 compiled the code for as0. You may have noticed that in the `build` folder we have a new file simply called <br />
-`as0`. This is the executable for the program, and can simply be run via the following terminal command: <br />
-Steps: <br />
+`as0`. This is the executable for the program, and can simply be run via the following steps: <br />
 - cd into the build folder: `cd as0/build`
 - run the following: `./as0`
 Congratulations! You've successfully ran as0. <br />
