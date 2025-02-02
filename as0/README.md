@@ -22,7 +22,7 @@ The following steps will walk you though how to fetch the `raylib-cpp` submodule
 - Next, you want to initialize a git repository: `git init`
 - You are now ready to add the raylib submodule! Do the following command in the terminal: `git submodule add https://github.com/joshuadahlunr/raylib-cpp.git`
 - Our submodule is not quite ready, we need to initialize its dependecies. Run: `git submodule init` and `git submodule update --init --recursive`
-- `raylib-cpp` is now successfully downloaded to your folder!.
+- `raylib-cpp` is now successfully downloaded to your folder!
 
 ## How to Compile AS0
 Compiling the code within the as0 folder is easy and only takes a few steps. <br />
