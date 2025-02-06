@@ -18,7 +18,9 @@ displaying text to the window we can insert our variables like so: `sampleString
 
 ## How to Fetch the Raylib Submodule
 The following steps will walk you though how to fetch the `raylib-cpp` submodule. <br />
-- If you haven't already, create a folder for your project: `mkdir myProject` and `cd myProject`
+- First, we will create the directory where we will store our code.
+- We will make our new folder within the `Documents` directory so run the following: `mkdir ~/Documents/as0`
+- Lets navigate to our new folder: `cd ~/Documents/as0`
 - Next, you want to initialize a git repository: `git init`
 - You are now ready to add the raylib submodule! Do the following command in the terminal: `git submodule add https://github.com/joshuadahlunr/raylib-cpp.git`
 - Our submodule is not quite ready, we need to initialize its dependecies. Run: `git submodule init` and `git submodule update --init --recursive`
@@ -26,16 +28,27 @@ The following steps will walk you though how to fetch the `raylib-cpp` submodule
 
 ## How to Compile AS0
 Compiling the code within the as0 folder is easy and only takes a few steps. <br />
-- Open the parent folder `CS 381` in a terminal and type `cd as0`
+- For this section we'll build on the directory we created in the previous section. 
+- Lets open our folder from the previous section: `cd ~/Documents/as0`
+- Here, created a `src` folder to store our source code: `mkdir src`
+- From this github repo open the `as0` folder, then the `src` folder and download `as0.cpp` to your Downloads folder.
+- Lets move the file from Downloads into our project folder: `mv ~/Downloads/as0.cpp ~/Documents/as0/src/`
+- Go ahead and download `CMakeLists.txt` from the `as0` folder and again we'll move it into our project folder:
+- `mv ~/Downloads/CMakeLists.txt ~/Documents/as0/`
+- At this point we should still be in `~/Documents/as0` but if not navigate back here via `cd ~/Documents/as0`
+- We want to create a `build` folder to store our Makefile and other necessities so run the following: `mkdir build`
 - Next, we will cd one more time into the build folder: `cd build`
 - In this folder, we can run the command `cmake ..` which will generate a makefile for us.
 - We can now type `make` in the terminal to compile our code.
+<br />
+Congrats! The code should now be successfully compiled. <br/>
 
 ## How to Run AS0
 If you successfully followed the steps in the How to Compile section above, you should have successfully <br />
 compiled the code for as0. You may have noticed that in the `build` folder we have a new file simply called <br />
 `as0`. This is the executable for the program, and can simply be run via the following steps: <br />
-- cd into the build folder: `cd as0/build`
+Note: the following `cd` assumes you've been following the steps in the fetch raylib and compile as0. <br />
+- cd into the build folder: `cd ~/Documents/as0/build`
 - run the following: `./as0` 
 <br/>
 Congratulations! You've successfully ran as0. <br />
