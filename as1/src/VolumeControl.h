@@ -26,6 +26,7 @@
 #include "raygui.h"
 
 #include <string.h>     // Required for: strcpy()
+#include <cmath>
 
 #ifndef GUI_VOLUMECONTROL_H
 #define GUI_VOLUMECONTROL_H
@@ -43,6 +44,7 @@ typedef struct {
     // NOTE: This variables should be added manually if required
     Sound ping;
     Color backgroundColor;
+    int sliderFocus;
 
 } GuiVolumeControlState;
 
@@ -90,6 +92,7 @@ GuiVolumeControlState InitGuiVolumeControl(void) {
 
     state.ping = LoadSound("../audio/ping.wav");
     state.backgroundColor = WHITE;
+    state.sliderFocus = 0;
     return state;
 }
 
@@ -127,9 +130,15 @@ void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
         GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
         GuiSetStyle(SLIDER, BORDER_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
         GuiSetStyle(SLIDER, BASE_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
-        GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
-        GuiSetStyle(LABEL, BASE_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
+        GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(DARKGRAY));
+        GuiSetStyle(LABEL, BASE_COLOR_NORMAL, ColorToInt(DARKGRAY));
     }
+
+    char *focusText = "";
+    if (state->sliderFocus == 0) focusText = "SFX Slider Focused";
+    else if (state->sliderFocus == 1) focusText = "Music Slider Focused";
+    else if (state->sliderFocus == 2) focusText = "Dialogue Slider Focused";
+    GuiLabel((Rectangle){ 24, 370, 256, 24 }, focusText);
 
     GuiGroupBox((Rectangle){ state->anchor01.x + 0, state->anchor01.y + 0, 256, 264 }, VolumeGroupText);
     GuiGroupBox((Rectangle){ state->anchor01.x + 24, state->anchor01.y + 24, 208, 56 }, SFXGroupText);
@@ -144,6 +153,20 @@ void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
     if (GuiButton((Rectangle){ 24, 304, 256, 24 }, PingButtonText)) PingButton(ping); 
     if (GuiButton((Rectangle){ 24, 336, 256, 24 }, DarkThemeButtonText)) {
         state->backgroundColor = (state->backgroundColor.r == 255) ? BLACK : WHITE;
+    }
+
+    if (IsKeyPressed(KEY_TAB)) {
+        state->sliderFocus = (state->sliderFocus + 1) % 3;
+    }
+    if (IsKeyDown(KEY_RIGHT)) {
+        if (state->sliderFocus == 0) state->SFXSliderValue = fmin(state->SFXSliderValue + 0.01f, 100);
+        else if (state->sliderFocus == 1) state->MusicSliderValue = fmin(state->MusicSliderValue + 0.01f, 100);
+        else if (state->sliderFocus == 2) state->DialogueSliderValue = fmin(state->DialogueSliderValue + 0.01f, 100);
+    }
+    if (IsKeyDown(KEY_LEFT)) {
+        if (state->sliderFocus == 0) state->SFXSliderValue = fmax(state->SFXSliderValue - 0.01f, 0);
+        else if (state->sliderFocus == 1) state->MusicSliderValue = fmax(state->MusicSliderValue - 0.01f, 0);
+        else if (state->sliderFocus == 2) state->DialogueSliderValue = fmax(state->DialogueSliderValue - 0.01f, 0);
     }
 }
 
