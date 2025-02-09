@@ -42,6 +42,7 @@ typedef struct {
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
     Sound ping;
+    Color backgroundColor;
 
 } GuiVolumeControlState;
 
@@ -88,6 +89,7 @@ GuiVolumeControlState InitGuiVolumeControl(void) {
     // Custom variables initialization
 
     state.ping = LoadSound("../audio/ping.wav");
+    state.backgroundColor = WHITE;
     return state;
 }
 
@@ -108,8 +110,27 @@ void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
     const char *DialogueGroupText = "DialogueVolume";    // GROUPBOX: DialogueGroup
     const char *DialogueSliderText = "";    // SLIDER: DialogueSlider
     const char *PingButtonText = "Ping";    // BUTTON: PingButton
+    const char *DarkThemeButtonText = "Dark Theme";   // BUTTON: DarkThemeButton
     
     // Draw controls
+    ClearBackground(state->backgroundColor);
+    if (state->backgroundColor.r == 0) {
+        GuiSetStyle(BUTTON, BORDER_COLOR_NORMAL, ColorToInt(LIME));
+        GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(LIME));
+        GuiSetStyle(SLIDER, BORDER_COLOR_NORMAL, ColorToInt(LIME));
+        GuiSetStyle(SLIDER, BASE_COLOR_NORMAL, ColorToInt(LIME));
+        GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(LIME));
+        GuiSetStyle(LABEL, BASE_COLOR_NORMAL, ColorToInt(LIME));
+    } 
+    else {
+        GuiSetStyle(BUTTON, BORDER_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
+        GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
+        GuiSetStyle(SLIDER, BORDER_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
+        GuiSetStyle(SLIDER, BASE_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
+        GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
+        GuiSetStyle(LABEL, BASE_COLOR_NORMAL, ColorToInt(LIGHTGRAY));
+    }
+
     GuiGroupBox((Rectangle){ state->anchor01.x + 0, state->anchor01.y + 0, 256, 264 }, VolumeGroupText);
     GuiGroupBox((Rectangle){ state->anchor01.x + 24, state->anchor01.y + 24, 208, 56 }, SFXGroupText);
     GuiLabel((Rectangle){ 64, 64, 120, 24 }, TextFormat("%.0f%%", state->SFXSliderValue));
@@ -121,6 +142,9 @@ void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
     GuiLabel((Rectangle){ 64, 224, 120, 24 }, TextFormat("%.0f%%", state->DialogueSliderValue));
     state->DialogueSliderValue = GuiSlider((Rectangle){ state->anchor01.x + 72, state->anchor01.y + 200, 144, 24 }, DialogueSliderText, NULL, state->DialogueSliderValue, 0, 100);
     if (GuiButton((Rectangle){ 24, 304, 256, 24 }, PingButtonText)) PingButton(ping); 
+    if (GuiButton((Rectangle){ 24, 336, 256, 24 }, DarkThemeButtonText)) {
+        state->backgroundColor = (state->backgroundColor.r == 255) ? BLACK : WHITE;
+    }
 }
 
 #endif // GUI_VOLUMECONTROL_IMPLEMENTATION
