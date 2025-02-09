@@ -41,6 +41,7 @@ typedef struct {
 
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
+    Sound ping;
 
 } GuiVolumeControlState;
 
@@ -52,7 +53,7 @@ extern "C" {            // Prevents name mangling of functions
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
 GuiVolumeControlState InitGuiVolumeControl(void);
-void GuiVolumeControl(GuiVolumeControlState *state);
+void GuiVolumeControl(GuiVolumeControlState *state, Sound ping);
 // static void PingButton();                // Button: PingButton logic
 
 #ifdef __cplusplus
@@ -86,6 +87,7 @@ GuiVolumeControlState InitGuiVolumeControl(void) {
 
     // Custom variables initialization
 
+    state.ping = LoadSound("../audio/ping.wav");
     return state;
 }
 
@@ -96,7 +98,7 @@ GuiVolumeControlState InitGuiVolumeControl(void) {
 // }
 
 
-void GuiVolumeControl(GuiVolumeControlState *state) {
+void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
     // Const text
     const char *VolumeGroupText = "Volume Controls";    // GROUPBOX: VolumeGroup
     const char *SFXGroupText = "SFXVolume";    // GROUPBOX: SFXGroup
@@ -118,7 +120,7 @@ void GuiVolumeControl(GuiVolumeControlState *state) {
     GuiGroupBox((Rectangle){ state->anchor01.x + 24, state->anchor01.y + 184, 208, 56 }, DialogueGroupText);
     GuiLabel((Rectangle){ 64, 224, 120, 24 }, TextFormat("%.0f%%", state->DialogueSliderValue));
     state->DialogueSliderValue = GuiSlider((Rectangle){ state->anchor01.x + 72, state->anchor01.y + 200, 144, 24 }, DialogueSliderText, NULL, state->DialogueSliderValue, 0, 100);
-    if (GuiButton((Rectangle){ 24, 304, 256, 24 }, PingButtonText)) PingButton(); 
+    if (GuiButton((Rectangle){ 24, 304, 256, 24 }, PingButtonText)) PingButton(ping); 
 }
 
 #endif // GUI_VOLUMECONTROL_IMPLEMENTATION

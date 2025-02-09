@@ -1,4 +1,5 @@
-extern void PingButton();
+#include "raylib.h"
+extern void PingButton(Sound ping);
 
 #define RAYGUI_IMPLEMENTATION
 #define GUI_VOLUMECONTROL_IMPLEMENTATION
