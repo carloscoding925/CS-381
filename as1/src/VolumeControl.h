@@ -26,7 +26,7 @@
 #include "raygui.h"
 
 #include <string.h>     // Required for: strcpy()
-#include <cmath>
+#include <cmath>        // Required for fmin(), fmax()
 
 #ifndef GUI_VOLUMECONTROL_H
 #define GUI_VOLUMECONTROL_H
@@ -43,8 +43,8 @@ typedef struct {
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
     Sound ping;
-    Color backgroundColor;
-    int sliderFocus;
+    Color backgroundColor;  // Added a ping, background color, and slider select - carlos hernandez
+    int sliderSelection;
 
 } GuiVolumeControlState;
 
@@ -56,7 +56,7 @@ extern "C" {            // Prevents name mangling of functions
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
 GuiVolumeControlState InitGuiVolumeControl(void);
-void GuiVolumeControl(GuiVolumeControlState *state, Sound ping);
+void GuiVolumeControl(GuiVolumeControlState *state, Sound ping); // add ping parameter to gui function - carlos hernandez
 // static void PingButton();                // Button: PingButton logic
 
 #ifdef __cplusplus
@@ -90,9 +90,9 @@ GuiVolumeControlState InitGuiVolumeControl(void) {
 
     // Custom variables initialization
 
-    state.ping = LoadSound("../audio/ping.wav");
+    state.ping = LoadSound("../audio/ping.wav"); // initialize new variables - carlos hernandez
     state.backgroundColor = WHITE;
-    state.sliderFocus = 0;
+    state.sliderSelection = 0;
     return state;
 }
 
@@ -115,7 +115,7 @@ void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
     const char *PingButtonText = "Ping";    // BUTTON: PingButton
     const char *DarkThemeButtonText = "Dark Theme";   // BUTTON: DarkThemeButton
     
-    // Draw controls
+    // Background and theme controls for changing between light - dark. - carlos hernandez
     ClearBackground(state->backgroundColor);
     if (state->backgroundColor.r == 0) {
         GuiSetStyle(BUTTON, BORDER_COLOR_NORMAL, ColorToInt(LIME));
@@ -134,12 +134,14 @@ void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
         GuiSetStyle(LABEL, BASE_COLOR_NORMAL, ColorToInt(DARKGRAY));
     }
 
+    // Text which changes based on the slider selected
     char *focusText = "";
-    if (state->sliderFocus == 0) focusText = "SFX Slider Focused";
-    else if (state->sliderFocus == 1) focusText = "Music Slider Focused";
-    else if (state->sliderFocus == 2) focusText = "Dialogue Slider Focused";
+    if (state->sliderSelection == 0) focusText = "SFX Slider Focused";
+    else if (state->sliderSelection == 1) focusText = "Music Slider Focused";
+    else if (state->sliderSelection == 2) focusText = "Dialogue Slider Focused";
     GuiLabel((Rectangle){ 24, 370, 256, 24 }, focusText);
 
+    // Draw GUI
     GuiGroupBox((Rectangle){ state->anchor01.x + 0, state->anchor01.y + 0, 256, 264 }, VolumeGroupText);
     GuiGroupBox((Rectangle){ state->anchor01.x + 24, state->anchor01.y + 24, 208, 56 }, SFXGroupText);
     GuiLabel((Rectangle){ 64, 64, 120, 24 }, TextFormat("%.0f%%", state->SFXSliderValue));
@@ -155,19 +157,21 @@ void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
         state->backgroundColor = (state->backgroundColor.r == 255) ? BLACK : WHITE;
     }
 
+    // Controls for switching between sliders and changing their values - carlos hernandez
     if (IsKeyPressed(KEY_TAB)) {
-        state->sliderFocus = (state->sliderFocus + 1) % 3;
+        state->sliderSelection = (state->sliderSelection + 1) % 3;
     }
     if (IsKeyDown(KEY_RIGHT)) {
-        if (state->sliderFocus == 0) state->SFXSliderValue = fmin(state->SFXSliderValue + 0.01f, 100);
-        else if (state->sliderFocus == 1) state->MusicSliderValue = fmin(state->MusicSliderValue + 0.01f, 100);
-        else if (state->sliderFocus == 2) state->DialogueSliderValue = fmin(state->DialogueSliderValue + 0.01f, 100);
+        if (state->sliderSelection == 0) state->SFXSliderValue = fmin(state->SFXSliderValue + 0.01f, 100);
+        else if (state->sliderSelection == 1) state->MusicSliderValue = fmin(state->MusicSliderValue + 0.01f, 100);
+        else if (state->sliderSelection == 2) state->DialogueSliderValue = fmin(state->DialogueSliderValue + 0.01f, 100);
     }
     if (IsKeyDown(KEY_LEFT)) {
-        if (state->sliderFocus == 0) state->SFXSliderValue = fmax(state->SFXSliderValue - 0.01f, 0);
-        else if (state->sliderFocus == 1) state->MusicSliderValue = fmax(state->MusicSliderValue - 0.01f, 0);
-        else if (state->sliderFocus == 2) state->DialogueSliderValue = fmax(state->DialogueSliderValue - 0.01f, 0);
+        if (state->sliderSelection == 0) state->SFXSliderValue = fmax(state->SFXSliderValue - 0.01f, 0);
+        else if (state->sliderSelection == 1) state->MusicSliderValue = fmax(state->MusicSliderValue - 0.01f, 0);
+        else if (state->sliderSelection == 2) state->DialogueSliderValue = fmax(state->DialogueSliderValue - 0.01f, 0);
     }
+    // Above, we use fmin and fmax to prevent the sliders from going out of bounds - carlos hernandez
 }
 
 #endif // GUI_VOLUMECONTROL_IMPLEMENTATION
