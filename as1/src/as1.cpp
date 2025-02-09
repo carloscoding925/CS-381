@@ -11,7 +11,8 @@ int main() {
 
     GuiVolumeControlState volumeControlGui = InitGuiVolumeControl();
 
-    InitAudioDevice();
+    raylib::AudioDevice audioDevice; 
+    audioDevice.Init();
     Sound ping = LoadSound("../audio/ping.wav");
     raylib::Music backgroundNoise = LoadMusicStream("../audio/crowd.wav");
     raylib::Music music = LoadMusicStream("../audio/price-of-freedom.mp3");
@@ -35,7 +36,8 @@ int main() {
     UnloadMusicStream(backgroundNoise);
     UnloadMusicStream(music);
     UnloadSound(ping);
-    CloseAudioDevice();
+    
+    audioDevice.Close();
 
     return 0;
 }
