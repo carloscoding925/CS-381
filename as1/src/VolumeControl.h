@@ -136,9 +136,9 @@ void GuiVolumeControl(GuiVolumeControlState *state, Sound ping) {
 
     // Text which changes based on the slider selected
     char *focusText = "";
-    if (state->sliderSelection == 0) focusText = "SFX Slider Focused";
-    else if (state->sliderSelection == 1) focusText = "Music Slider Focused";
-    else if (state->sliderSelection == 2) focusText = "Dialogue Slider Focused";
+    if (state->sliderSelection == 0) focusText = "SFX Slider Selected";
+    else if (state->sliderSelection == 1) focusText = "Music Slider Selected";
+    else if (state->sliderSelection == 2) focusText = "Dialogue Slider Selected";
     GuiLabel((Rectangle){ 24, 370, 256, 24 }, focusText);
 
     // Draw GUI

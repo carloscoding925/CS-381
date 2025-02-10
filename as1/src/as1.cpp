@@ -17,9 +17,14 @@ int main() {
     // Declare audio variables
     raylib::AudioDevice audioDevice; 
     audioDevice.Init();
-    Sound ping = LoadSound("../audio/ping.wav");
-    raylib::Music backgroundNoise = LoadMusicStream("../audio/crowd.wav");
-    raylib::Music music = LoadMusicStream("../audio/price-of-freedom.mp3");
+    Sound ping = LoadSound("../audio/get-out-0.5.mp3");
+    raylib::Music backgroundNoise = LoadMusicStream("../audio/ocean-waves.mp3");
+    raylib::Music music = LoadMusicStream("../audio/coffeeshop.mp3");
+
+    // Set audio to loop
+    backgroundNoise.SetLooping(true);
+    music.SetLooping(true);
+
 
     // Begin playing audio
     PlayMusicStream(backgroundNoise);
@@ -27,10 +32,10 @@ int main() {
 
     while(!window.ShouldClose()) {
         // Update audio based on the slider values
-        SetSoundVolume(ping, volumeControlGui.SFXSliderValue / 20.0f);
-        SetMusicVolume(backgroundNoise, volumeControlGui.DialogueSliderValue / 50.0f);
+        SetSoundVolume(ping, volumeControlGui.SFXSliderValue / 50.f);
+        SetMusicVolume(backgroundNoise, volumeControlGui.DialogueSliderValue / 20.0f);
         UpdateMusicStream(backgroundNoise);
-        SetMusicVolume(music, volumeControlGui.MusicSliderValue / 20.0f);
+        SetMusicVolume(music, volumeControlGui.MusicSliderValue / 50.0f);
         UpdateMusicStream(music);
 
         // Draw the gui
