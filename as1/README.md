@@ -26,7 +26,7 @@ The following steps will guide you through pulling the repo from github and fetc
 - This will pull the entire `CS-381` repo into your folder, but we want to be in the subfolder `as1`
 - To get there lets do `cd CS-381/as1`
 - If we do `ls` you'll see `raylib-cpp` is already here, but it is not quite ready to use.
-- To initialize it, lets perform the following: `git submodule init` and `git submodule update --init --recursive`
+- To initialize it, lets perform the following: `git submodule update --init --recursive`
 - Congratulations! You now have `raylib-cpp` initialized. 
 
 ## How to Compile AS1
