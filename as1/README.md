@@ -44,7 +44,7 @@ The following steps will guide you through compiling the code for AS1. <br />
 - Lets run this executable! Type `./as1`
 - Congratulations! You've ran AS1.
 
-## How to Enumerate the Controls for AS1
+## Controls Enumeration for AS1
 The controls for AS1 are as follows: <br />
 - **TAB**: Change selected slider
 - **Right Arrow Key** Increase Volume
