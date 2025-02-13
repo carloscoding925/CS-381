@@ -16,10 +16,9 @@ int main() {
 
     // Declare audio variables
     raylib::AudioDevice audioDevice; 
-    audioDevice.Init();
-    Sound ping = LoadSound("../audio/get-out-0.5.mp3");
+    Sound ping = LoadSound("../audio/get-out.mp3");
     raylib::Music backgroundNoise = LoadMusicStream("../audio/crowd.wav");
-    raylib::Music music = LoadMusicStream("../audio/coffeeshop-music.mp3");
+    raylib::Music music = LoadMusicStream("../audio/sponge.mp3");
 
     // Set audio to loop
     backgroundNoise.SetLooping(true);
