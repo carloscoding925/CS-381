@@ -49,3 +49,8 @@ The controls for AS1 are as follows: <br />
 - **TAB**: Change selected slider
 - **Right Arrow Key** Increase Volume
 - **Left Arrow Key** Decrease Volume
+
+## Extra Credit
+- Added Dark Theme (black background + changed slider color to green)
+- Added keyboard controls for controlling volume (TAB and left/right arrows)
+- Added spongebob theme for music and new ping noise
