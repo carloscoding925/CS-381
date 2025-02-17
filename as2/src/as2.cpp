@@ -1,6 +1,7 @@
 #include <raylib-cpp.hpp>
 #include "../assets/skybox.hpp"
 
+// Ensure that the type is a function which takes a raylib::Matrix and returns a raylib::Matrix.
 template<typename T>
 concept Transformer = requires(T t, raylib::Matrix m) {
     { t(m) } -> std::convertible_to<raylib::Matrix>;
@@ -11,9 +12,9 @@ concept Transformer = requires(T t, raylib::Matrix m) {
 *              transformer - Transformer auto
 *  This function draws the model with the given transformation and then draws a black bounding box around the model.
 */
-
 void DrawBoundedModel(raylib::Model& model, Transformer auto transformer) {
     // Here, we back up the original model transformation matrix in case we want to draw the model again with a different transformation later.
+    // The backup will be reapplied to the model after the model is drawn with the current transformation.
     raylib::Matrix backup = model.transform;
     // Here, we apply the transformation from the lambda to our model.
     model.transform = transformer(backup);
