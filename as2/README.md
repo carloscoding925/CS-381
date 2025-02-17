@@ -32,7 +32,7 @@ The following steps will guide you through compiling the code for AS2. <br />
 - In here, we can run the following commands to compile: `cmake ..` and `make`
 - Congratulations! You have successfully compiled the code for AS2.
 
-## How to Run AS1
+## How to Run AS2
 The following steps will guide you through compiling the code for AS2. <br />
 - Lets navigate to the build folder of our project if youre not already there: `cd ~/Documents/my-project/CS-381/as2/build`
 - In our previous guide we compiled the code for AS2, which should have produced an executable called `as2`
