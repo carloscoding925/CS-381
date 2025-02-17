@@ -16,6 +16,7 @@ void DrawBoundedModel(raylib::Model& model, Transformer auto transformer) {
 }
 
 int main() {
+    // Create environment & camera
     raylib::Window window(1000, 700, "CS381 - Assignment 2");
     cs381::SkyBox sky("textures/skybox.png");
     auto camera = raylib::Camera(
@@ -25,11 +26,13 @@ int main() {
         45
     );
 
+    // Load rocket and truck models
     auto rocket = raylib::Model("meshes/rocket.glb");
     rocket.transform = raylib::Matrix::Identity().Scale(30);
     auto truck = raylib::Model("../assets/Kenny Car Kit/truck.glb");
     truck.transform = raylib::Matrix::Identity().Scale(30);
 
+    // Transformer lambdas for the different model positions
     auto transformerCenter = [](raylib::Matrix& transform) -> raylib::Matrix{
         return transform.Translate({0, 0, 0});
     };
@@ -46,6 +49,7 @@ int main() {
         return transform.Translate({100, 100, 0}).Scale(1, 2, 1).RotateY(270 * DEG2RAD);
     };
 
+    // Draw skybox and models to the window
     while(!window.ShouldClose()) {
         window.BeginDrawing();
             camera.BeginMode();

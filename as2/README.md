@@ -33,6 +33,7 @@ The following steps will guide you through compiling the code for AS2. <br />
 - Congratulations! You've ran AS2.
 
 ## Controls Enumeration for AS2
-**NotApplicable** <br />
+**Not Applicable** <br />
 
 ## Extra Credit
+**N/A** <br />
