@@ -7,7 +7,7 @@ via the given lambda, and after the model is drawn the original transformation i
 In regards to setting a transformation when a model is loaded already, this is definitely possible as the function<br />
 just needs to be called again and it will redraw the model with the new transformation. In regards to tranforming <br />
 a model relative to a parent, this is also possible as we can have a lambda which accepts a parent transform in its <br />
-capture clause which returns something like the parent transform - the child transform which is accepted by our <br />
+capture clause which returns something like the parent transform minus the child transform which is accepted by our <br />
 `DrawBoundedModel()` function.
 
 ## How to Fetch the Raylib Submodule
