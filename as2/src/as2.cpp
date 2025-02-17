@@ -6,12 +6,26 @@ concept Transformer = requires(T t, raylib::Matrix m) {
     { t(m) } -> std::convertible_to<raylib::Matrix>;
 };
 
+/* DrawBoundedModel function
+*  Parameters: model - raylib::Model&
+*              transformer - Transformer auto
+*  This function draws the model with the given transformation and then draws a black bounding box around the model.
+*/
+
 void DrawBoundedModel(raylib::Model& model, Transformer auto transformer) {
+    // Here, we back up the original model transformation matrix in case we want to draw the model again with a different transformation later.
     raylib::Matrix backup = model.transform;
+    // Here, we apply the transformation from the lambda to our model.
     model.transform = transformer(backup);
+    // Here, we draw the model. Notice the vector3 inside the Draw function is empty. This is because we already have our transform applied via the lambda in the line above.
     model.Draw({});
+    // Here we create a bounding box object for our model. 
     auto box = model.GetTransformedBoundingBox();
+    // Here we draw the bounding box around our model.
     DrawBoundingBox(box, raylib::Color::Black());
+    // Here, we reapply the original transformation back to the model.
+    // Why is this step necessary? If we want to redraw our models, we need to set the transformation back to the original state so that
+    // our transformations are always measured from the origin and not from wherever the previous transformation was. 
     model.transform = backup;
 }
 

@@ -1,7 +1,14 @@
 # Assignment 2 - Carlos Hernandez - CS 381
 
 ## What is the point of the DrawBoundedModel function?
-something here <br />
+The `DrawBoundedModel()` function is responsible for drawing our model to the window with the given transformation <br />
+lambda. The transformation matrix of the model is saved into a variable before applying the new transformation <br />
+via the given lambda, and after the model is drawn the original transformation is re-applied to the model.  <br />
+In regards to setting a transformation when a model is loaded already, this is definitely possible as the function<br />
+just needs to be called again and it will redraw the model with the new transformation. In regards to tranforming <br />
+a model relative to a parent, this is also possible as we can have a lambda which accepts a parent transform in its <br />
+capture clause which returns something like the parent transform - the child transform which is accepted by our <br />
+`DrawBoundedModel()` function.
 
 ## How to Fetch the Raylib Submodule
 The following steps will guide you through pulling the repo from github and fetching the `raylib-cpp` submodule. <br />
