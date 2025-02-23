@@ -27,28 +27,58 @@ int main() {
     raylib::Window window(screenWidth, screenHeight, title);
     window.SetState(FLAG_WINDOW_RESIZABLE);
 
-    raylib::Model model("../assets/Kenny Car Kit/cone.glb");
-    model.transform = raylib::Matrix::Identity().Scale(5);
+    raylib::Model truck("../assets/Kenny Car Kit/truck.glb");
+    truck.transform = raylib::Matrix::Identity().Scale(5);
+
+    raylib::Model wheels("../assets/Kenny Car Kit/wheel-default.glb");
+    wheels.transform = raylib::Matrix::Identity().Scale(5);
 
     raylib::Model grass = raylib::Mesh::Plane(100, 100, 1, 1).LoadModelFrom();
     raylib::Texture grassTexture = raylib::Texture("../assets/textures/grass.jpg");
     grass.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grassTexture;
 
-    float targetSpeed = 5;
-    float coneHeading = 45;
-    float coneSpeed = 0;
-    raylib::Vector3 conePosition = { 0.0f, 0.0f, 0.0f };
+    float targetSpeed = 0;
+    float truckHeading = 0;
+    float truckSpeed = 0;
+    raylib::Vector3 truckPosition = { 0.0f, 0.0f, 0.0f };
 
     cs381::SkyBox sky("textures/skybox.png");
     raylib::Camera3D camera(raylib::Vector3{0.0f, 10.0f, 30.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
 
     float timer = 0;
+    bool isLeftPressed = false;
+    bool isRightPressed = false;
 
     while(!window.ShouldClose()) {
 
-        coneSpeed = std::lerp(coneSpeed, targetSpeed, window.GetFrameTime());
-        raylib::Vector3 velocity = { cos(raylib::Degree(coneHeading)) * coneSpeed, 0, -sin(raylib::Degree(coneHeading)) * coneSpeed };
-        conePosition = conePosition + velocity * window.GetFrameTime();
+        if (raylib::Keyboard::IsKeyDown(KEY_W) && timer <= 0) {
+            timer = 1.0;
+            targetSpeed = 2.5;
+        }
+        else if (raylib::Keyboard::IsKeyDown(KEY_S) && timer <= 0) {
+            timer = 1.0;
+            targetSpeed = 0;
+        }
+        else if (raylib::Keyboard::IsKeyDown(KEY_SPACE) && timer <= 0) {
+            timer = 1.0;
+            targetSpeed = 0;
+            truckSpeed = 0;
+        }
+        timer -= window.GetFrameTime();
+        
+        if (raylib::Keyboard::IsKeyDown(KEY_A) && !isLeftPressed) {
+            truckHeading = truckHeading + 5;
+        }
+        isLeftPressed = raylib::Keyboard::IsKeyDown(KEY_A);
+
+        if (raylib::Keyboard::IsKeyDown(KEY_D) && !isRightPressed) {
+            truckHeading = truckHeading - 5;
+        }
+        isRightPressed = raylib::Keyboard::IsKeyDown(KEY_D);
+
+        truckSpeed = std::lerp(truckSpeed, targetSpeed, window.GetFrameTime());
+        raylib::Vector3 velocity = { cos(raylib::Degree(truckHeading)) * truckSpeed, 0, -sin(raylib::Degree(truckHeading)) * truckSpeed };
+        truckPosition = truckPosition + velocity * window.GetFrameTime();
 
         window.BeginDrawing();
         {
@@ -57,8 +87,25 @@ int main() {
             {
                 sky.Draw();
                 grass.Draw({});
-                DrawBoundedModel(model, [&conePosition, &coneHeading](raylib::Transform t) {
-                    return t.Translate(conePosition).RotateY(raylib::Degree(coneHeading));
+                // Truck
+                DrawBoundedModel(truck, [&truckPosition, &truckHeading](raylib::Transform t) {
+                    return t.Translate(truckPosition).RotateY(raylib::Degree(truckHeading + 90));
+                });
+                // Front Left
+                DrawBoundedModel(wheels, [&truckPosition, &truckHeading](raylib::Transform t) {
+                    return t.Translate(truckPosition).Translate({4.6, 0, 2.5}).RotateY(raylib::Degree(truckHeading + 90));
+                });
+                // Back Left
+                DrawBoundedModel(wheels, [&truckPosition, &truckHeading](raylib::Transform t) {
+                    return t.Translate(truckPosition).Translate({-3.8, 0, 2.5}).RotateY(raylib::Degree(truckHeading + 90));
+                });
+                // Front Right
+                DrawBoundedModel(wheels, [&truckPosition, &truckHeading](raylib::Transform t) {
+                    return t.Translate(truckPosition).Translate({4.6, 0, -2.5}).RotateY(raylib::Degree(truckHeading + 90));
+                });
+                // Back Right
+                DrawBoundedModel(wheels, [&truckPosition, &truckHeading](raylib::Transform t) {
+                    return t.Translate(truckPosition).Translate({-3.8, 0, -2.5}).RotateY(raylib::Degree(truckHeading + 90));
                 });
             }
             camera.EndMode();
