@@ -55,7 +55,7 @@ int main() {
 
         if (raylib::Keyboard::IsKeyDown(KEY_UP) && timer <= 0) {
             timer = 1.0;
-            targetSpeed = 2.5;
+            targetSpeed = 5.0;
         }
         else if (raylib::Keyboard::IsKeyDown(KEY_DOWN) && timer <= 0) {
             timer = 1.0;
@@ -96,6 +96,9 @@ int main() {
         raylib::Vector3 backRightWheelPos = truckPosition + raylib::Vector3{-3.8f * cos(radians) + 2.5f * sin(radians), 0, -3.8f * -sin(radians) - 2.5f * -cos(radians)};
         raylib::Vector3 frontLeftWheelPos = truckPosition + raylib::Vector3{4.6f * cos(radians) - 2.5f * sin(radians), 0, 4.6f * -sin(radians) + 2.5f * -cos(radians)};
         raylib::Vector3 backLeftWheelPos = truckPosition + raylib::Vector3{-3.8f * cos(radians) - 2.5f * sin(radians), 0, -3.8f * -sin(radians) + 2.5f * -cos(radians)};
+
+        camera.position = truckPosition + raylib::Vector3{0.0f, 10.0f, 30.0f};
+        camera.target = truckPosition;
 
         window.BeginDrawing();
         {
