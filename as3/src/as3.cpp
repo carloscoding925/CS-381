@@ -4,6 +4,7 @@
 #include <raylib-cpp.hpp>
 #include "../assets/skybox.hpp"
 #include <iostream>
+#include <raymath.h>
 
 template<typename T>
 concept Transformer = requires(T t, raylib::Matrix m) {
@@ -51,11 +52,11 @@ int main() {
 
     while(!window.ShouldClose()) {
 
-        if (raylib::Keyboard::IsKeyDown(KEY_W) && timer <= 0) {
+        if (raylib::Keyboard::IsKeyDown(KEY_UP) && timer <= 0) {
             timer = 1.0;
             targetSpeed = 2.5;
         }
-        else if (raylib::Keyboard::IsKeyDown(KEY_S) && timer <= 0) {
+        else if (raylib::Keyboard::IsKeyDown(KEY_DOWN) && timer <= 0) {
             timer = 1.0;
             targetSpeed = 0;
         }
@@ -66,18 +67,19 @@ int main() {
         }
         timer -= window.GetFrameTime();
         
-        if (raylib::Keyboard::IsKeyDown(KEY_A) && !isLeftPressed) {
-            truckHeading = truckHeading + 5;
+        if (raylib::Keyboard::IsKeyDown(KEY_LEFT) && !isLeftPressed) {
+            truckHeading = truckHeading + 10;
         }
-        isLeftPressed = raylib::Keyboard::IsKeyDown(KEY_A);
+        isLeftPressed = raylib::Keyboard::IsKeyDown(KEY_LEFT);
 
-        if (raylib::Keyboard::IsKeyDown(KEY_D) && !isRightPressed) {
-            truckHeading = truckHeading - 5;
+        if (raylib::Keyboard::IsKeyDown(KEY_RIGHT) && !isRightPressed) {
+            truckHeading = truckHeading - 10;
         }
-        isRightPressed = raylib::Keyboard::IsKeyDown(KEY_D);
+        isRightPressed = raylib::Keyboard::IsKeyDown(KEY_RIGHT);
 
+        float radians = DEG2RAD * truckHeading;
         truckSpeed = std::lerp(truckSpeed, targetSpeed, window.GetFrameTime());
-        raylib::Vector3 velocity = { cos(raylib::Degree(truckHeading)) * truckSpeed, 0, -sin(raylib::Degree(truckHeading)) * truckSpeed };
+        raylib::Vector3 velocity = { cos(radians) * truckSpeed, 0, -sin(radians) * truckSpeed };
         truckPosition = truckPosition + velocity * window.GetFrameTime();
 
         window.BeginDrawing();
