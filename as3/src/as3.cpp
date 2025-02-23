@@ -92,6 +92,11 @@ int main() {
 
         truckPosition.y = std::lerp(truckPosition.y, truckYTarget, window.GetFrameTime());
 
+        raylib::Vector3 frontRightWheelPos = truckPosition + raylib::Vector3{4.6f * cos(radians) + 2.5f * sin(radians), 0, 4.6f * -sin(radians) - 2.5f * -cos(radians)};
+        raylib::Vector3 backRightWheelPos = truckPosition + raylib::Vector3{-3.8f * cos(radians) + 2.5f * sin(radians), 0, -3.8f * -sin(radians) - 2.5f * -cos(radians)};
+        raylib::Vector3 frontLeftWheelPos = truckPosition + raylib::Vector3{4.6f * cos(radians) - 2.5f * sin(radians), 0, 4.6f * -sin(radians) + 2.5f * -cos(radians)};
+        raylib::Vector3 backLeftWheelPos = truckPosition + raylib::Vector3{-3.8f * cos(radians) - 2.5f * sin(radians), 0, -3.8f * -sin(radians) + 2.5f * -cos(radians)};
+
         window.BeginDrawing();
         {
             window.ClearBackground(raylib::Color::White());
@@ -103,21 +108,21 @@ int main() {
                 DrawBoundedModel(truck, [&truckPosition, &truckHeading](raylib::Transform t) {
                     return t.Translate(truckPosition).RotateY(raylib::Degree(truckHeading + 90));
                 });
-                // Front Left
-                DrawBoundedModel(wheels, [&truckPosition, &truckHeading](raylib::Transform t) {
-                    return t.Translate(truckPosition).Translate({4.6, 0, 2.5}).RotateY(raylib::Degree(truckHeading + 270));
+                // Front Right Wheel
+                DrawBoundedModel(wheels, [&truckHeading, &frontRightWheelPos](raylib::Transform t) {
+                    return t.Translate(frontRightWheelPos).RotateY(raylib::Degree(truckHeading + 270));
                 });
-                // Back Left
-                DrawBoundedModel(wheels, [&truckPosition, &truckHeading](raylib::Transform t) {
-                    return t.Translate(truckPosition).Translate({-3.8, 0, 2.5}).RotateY(raylib::Degree(truckHeading + 270));
+                // Back Right Wheel
+                DrawBoundedModel(wheels, [&truckHeading, &backRightWheelPos](raylib::Transform t) {
+                    return t.Translate(backRightWheelPos).RotateY(raylib::Degree(truckHeading + 270));
                 });
-                // Front Right
-                DrawBoundedModel(wheels, [&truckPosition, &truckHeading](raylib::Transform t) {
-                    return t.Translate(truckPosition).Translate({4.6, 0, -2.5}).RotateY(raylib::Degree(truckHeading + 270));
+                // Front Left Wheel
+                DrawBoundedModel(wheels, [&truckHeading, &frontLeftWheelPos](raylib::Transform t) {
+                    return t.Translate(frontLeftWheelPos).RotateY(raylib::Degree(truckHeading + 90));
                 });
-                // Back Right
-                DrawBoundedModel(wheels, [&truckPosition, &truckHeading](raylib::Transform t) {
-                    return t.Translate(truckPosition).Translate({-3.8, 0, -2.5}).RotateY(raylib::Degree(truckHeading + 270));
+                // Back Left Wheel
+                DrawBoundedModel(wheels, [&truckHeading, &backLeftWheelPos](raylib::Transform t) {
+                    return t.Translate(backLeftWheelPos).RotateY(raylib::Degree(truckHeading + 90));
                 });
             }
             camera.EndMode();
