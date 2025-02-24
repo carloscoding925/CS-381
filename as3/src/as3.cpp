@@ -91,7 +91,6 @@ int main() {
         /* Keys for controlling truck direction
         * A for turning the truck left
         * D for turning the truck right
-        * Increments of 10 are used so the truck doesnt turn super sharp
         */
         if (raylib::Keyboard::IsKeyDown(KEY_A) && !isLeftPressed) {
             targetHeading = targetHeading + 30;
