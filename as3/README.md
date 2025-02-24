@@ -56,3 +56,9 @@ The following steps will guide you through running the code for AS3. <br />
 - **Arrow DOWN**: Brings Truck Down to Ground Level (Y = 0)
 
 ## Extra Credit
+The following are things I added for extra credit <br />
+
+- Used a bool / timer with `IsKeyDown` instead of using `IsKeyPressed`
+- Added wheels which follow the truck
+- Implement camera movement which follows the truck
+- Added the ability to fly (`Arrow Up` - `Arrow Down`)
