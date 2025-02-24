@@ -91,6 +91,9 @@ int main() {
         /* Keys for controlling truck direction
         * A for turning the truck left
         * D for turning the truck right
+        * Why are we checking if the key is down AND if left is being pressed?
+        * When the key is down this returns true for EVERY frame the key is down, so targetHeading gets updated CONTINOUSLY leading to a very large heading
+        * By checking if the key is down AND if left is being pressed, we only update the targetHeading once per key press.
         */
         if (raylib::Keyboard::IsKeyDown(KEY_A) && !isLeftPressed) {
             targetHeading = targetHeading + 30;
