@@ -105,7 +105,7 @@ int main() {
 
         // The sin and cos functions work better with radians, so we convert the truckHeading from degrees to rads
         float radians = DEG2RAD * truckHeading;
-        // We want the truck speed to gradually increase like in real life so we use lerp to smooth the transition
+        // We want the truck speed and heading to gradually increase like in real life so we use lerp to smooth the transition
         truckSpeed = std::lerp(truckSpeed, targetSpeed, window.GetFrameTime());
         truckHeading = std::lerp(truckHeading, targetHeading, window.GetFrameTime());
         // Here we calculate the direction vectors for the truck with cos being the X direction and sin being the Z direction
