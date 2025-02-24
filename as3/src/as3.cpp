@@ -53,11 +53,11 @@ int main() {
 
     while(!window.ShouldClose()) {
 
-        if (raylib::Keyboard::IsKeyDown(KEY_UP) && timer <= 0) {
+        if (raylib::Keyboard::IsKeyDown(KEY_W) && timer <= 0) {
             timer = 1.0;
             targetSpeed = 5.0;
         }
-        else if (raylib::Keyboard::IsKeyDown(KEY_DOWN) && timer <= 0) {
+        else if (raylib::Keyboard::IsKeyDown(KEY_S) && timer <= 0) {
             timer = 1.0;
             targetSpeed = 0;
         }
@@ -66,21 +66,21 @@ int main() {
             targetSpeed = 0;
             truckSpeed = 0;
         }
-        else if (raylib::Keyboard::IsKeyDown(KEY_W) && timer <= 0) {
+        else if (raylib::Keyboard::IsKeyDown(KEY_UP) && timer <= 0) {
             timer = 1.0;
             truckYTarget = 3.0;
         }
-        else if (raylib::Keyboard::IsKeyDown(KEY_S) && timer <= 0) {
+        else if (raylib::Keyboard::IsKeyDown(KEY_DOWN) && timer <= 0) {
             timer = 1.0;
             truckYTarget = 0.0;
         }
         timer -= window.GetFrameTime();
         
-        if (raylib::Keyboard::IsKeyDown(KEY_LEFT) && !isLeftPressed) {
+        if (raylib::Keyboard::IsKeyDown(KEY_A) && !isLeftPressed) {
             truckHeading = truckHeading + 10;
         }
         isLeftPressed = raylib::Keyboard::IsKeyDown(KEY_LEFT);
-        if (raylib::Keyboard::IsKeyDown(KEY_RIGHT) && !isRightPressed) {
+        if (raylib::Keyboard::IsKeyDown(KEY_D) && !isRightPressed) {
             truckHeading = truckHeading - 10;
         }
         isRightPressed = raylib::Keyboard::IsKeyDown(KEY_RIGHT);

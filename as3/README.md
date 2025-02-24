@@ -46,7 +46,13 @@ The following steps will guide you through running the code for AS3. <br />
 - Congratulations! You've ran AS3.
 
 ## Controls Enumeration for AS3
-**Not Applicable** <br />
+- **W**: Increases Velocity in the Trucks Current Direction
+- **S**: Decreases the Trucks Velocity to 0
+- **A**: Turns the Truck Left (increases heading)
+- **D**: Turns the Truck Right (decreases heading)
+- **SPACE**: Stops the Truck Immediately (sets trucks velocity to 0)
+
+- **Arrow UP**: Makes Truck Fly Up 3 Units
+- **Arrow DOWN**: Brings Truck Down to Ground Level (Y = 0)
 
 ## Extra Credit
-**N/A** <br />
