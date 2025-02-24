@@ -48,6 +48,7 @@ int main() {
     // Truck physics variables
     float targetSpeed = 0;
     float truckHeading = 0;
+    float targetHeading = 0;
     float truckSpeed = 0;
     float truckYTarget = 0;
     raylib::Vector3 truckPosition = { 0.0f, 0.0f, 0.0f };
@@ -93,11 +94,11 @@ int main() {
         * Increments of 10 are used so the truck doesnt turn super sharp
         */
         if (raylib::Keyboard::IsKeyDown(KEY_A) && !isLeftPressed) {
-            truckHeading = truckHeading + 10;
+            targetHeading = targetHeading + 30;
         }
         isLeftPressed = raylib::Keyboard::IsKeyDown(KEY_A);
         if (raylib::Keyboard::IsKeyDown(KEY_D) && !isRightPressed) {
-            truckHeading = truckHeading - 10;
+            targetHeading = targetHeading - 30;
         }
         isRightPressed = raylib::Keyboard::IsKeyDown(KEY_D);
 
@@ -107,6 +108,7 @@ int main() {
         float radians = DEG2RAD * truckHeading;
         // We want the truck speed to gradually increase like in real life so we use lerp to smooth the transition
         truckSpeed = std::lerp(truckSpeed, targetSpeed, window.GetFrameTime());
+        truckHeading = std::lerp(truckHeading, targetHeading, window.GetFrameTime());
         // Here we calculate the direction vectors for the truck with cos being the X direction and sin being the Z direction
         // The Y direction is 0 since Y controls the up and down movement of the truck, and we implement this elsewhere. 
         raylib::Vector3 velocity = { cos(radians) * truckSpeed, 0, -sin(radians) * truckSpeed };
