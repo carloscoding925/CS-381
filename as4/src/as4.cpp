@@ -23,7 +23,7 @@ void DrawBoundedModel(raylib::Model& model, Transformer auto transformer) {
 int main() {
     const int windowWidth = 1000;
     const int windowHeight = 700;
-    const std::string title = "Skibidi Toilet Glizzy Gobler";
+    const std::string title = "The Rizzler & Big AJ Present: Skibidi Toilet Glizzy Gobler";
     raylib::Window window(windowWidth, windowHeight, title);
     window.SetState(FLAG_WINDOW_RESIZABLE);
 
@@ -37,9 +37,49 @@ int main() {
     grass.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grassTexture;
 
     cs381::SkyBox sky("textures/skybox.png");
-    raylib::Camera3D camera(raylib::Vector3{0.0f, 10.0f, 30.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
+    raylib::Camera3D camera(raylib::Vector3{0.0f, 20.0f, 40.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
+
+    raylib::Vector3 toiletPosition = { 0.0f, 0.0f, 0.0f };
+    raylib::Vector3 hotdogPosition = { 0.0f, 0.0f, 0.0f };
+
+    float targetSpeed = 0;
+    float toiletSpeed = 0;
+    float toiletHeading = 0;
+    float targetHeading = 0;
+    float toiletYTarget = 0;
 
     while(!window.ShouldClose()) {
+        if (raylib::Keyboard::IsKeyDown(KEY_W)) {
+            targetSpeed = 5.0f;
+        } 
+        else {
+            targetSpeed = 0.0f;
+        }
+
+        if (raylib::Keyboard::IsKeyDown(KEY_A)) {
+            targetHeading = targetHeading + 0.02f;
+        }
+        else if (raylib::Keyboard::IsKeyDown(KEY_D)) {
+            targetHeading = targetHeading - 0.02;
+        }
+
+        if (raylib::Keyboard::IsKeyPressed(KEY_SPACE)) {
+            toiletYTarget = 4.0f;
+        }
+        else if (toiletPosition.y > 3.5f){
+            toiletYTarget = 0;
+        }
+
+        float radians = DEG2RAD * toiletHeading;
+        toiletSpeed = std::lerp(toiletSpeed, targetSpeed, window.GetFrameTime());
+        toiletHeading = std::lerp(toiletHeading, targetHeading, window.GetFrameTime());
+        toiletPosition.y = std::lerp(toiletPosition.y, toiletYTarget, window.GetFrameTime() * 2);
+        std::cout << toiletHeading << std::endl;
+        raylib::Vector3 velocity = { cos(radians) * toiletSpeed, 0, -sin(radians) * toiletSpeed };
+        toiletPosition = toiletPosition + velocity * window.GetFrameTime();
+
+        camera.position = toiletPosition + raylib::Vector3{0.0f, 20.0f, 40.0f};
+        camera.target = toiletPosition;
 
         window.BeginDrawing();
         {
@@ -48,11 +88,11 @@ int main() {
             {
                 sky.Draw();
                 grass.Draw({});
-                DrawBoundedModel(toilet, [](raylib::Transform t) {
-                    return t.Translate(raylib::Vector3{0.0f, 0.0f, 0.0f});
+                DrawBoundedModel(toilet, [&toiletPosition, &toiletHeading](raylib::Transform t) {
+                    return t.Translate(toiletPosition).RotateY(raylib::Degree(toiletHeading));
                 });
-                DrawBoundedModel(hotdog, [](raylib::Transform t) {
-                    return t.Translate(raylib::Vector3{0.0f, 0.0f, 0.0f});
+                DrawBoundedModel(hotdog, [&hotdogPosition](raylib::Transform t) {
+                    return t.Translate(hotdogPosition);
                 });
             }
             camera.EndMode();
