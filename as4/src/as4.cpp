@@ -6,6 +6,7 @@
 #include <iostream>
 #include <raymath.h>
 #include "HotdogCounter.h"
+#include <fstream>
 
 template<typename T>
 concept Transformer = requires(T t, raylib::Matrix m) {
@@ -50,7 +51,7 @@ int main() {
     costcoGuys.SetLooping(true);
     PlayMusicStream(costcoGuys);
 
-    HotdogCounterState state = InitHotdogCounter();
+    HotdogCounterState hotdogState = InitHotdogCounter();
 
     raylib::Model toilet("../assets/Kenny-Furniture-Kit/toilet.glb");
     toilet.transform = raylib::Matrix::Identity().Scale(5);
@@ -70,8 +71,17 @@ int main() {
     float targetSpeed = 0;
     float toiletSpeed = 0;
     float toiletHeading = 0;
-    float targetHeading = 0;
     float toiletYTarget = 0;
+    bool showHighScore = false;
+
+    std::ifstream readFile("../assets/data/score.txt");
+    if (readFile.is_open()) {
+        readFile >> hotdogState.highScore;
+        readFile.close();
+    }
+    else {
+        std::cout << "Unable to open score file" << std::endl;
+    }
 
     while(!window.ShouldClose()) {
         SetMusicVolume(costcoGuys, 0.5f);
@@ -89,10 +99,16 @@ int main() {
         }
 
         if (raylib::Keyboard::IsKeyDown(KEY_A)) {
-            targetHeading = targetHeading + 0.2f;
+            toiletHeading = toiletHeading + (100.0f * window.GetFrameTime());
+            if (toiletHeading > 360.0f) {
+                toiletHeading = toiletHeading - 360.0f;
+            }
         }
         else if (raylib::Keyboard::IsKeyDown(KEY_D)) {
-            targetHeading = targetHeading - 0.2f;
+            toiletHeading = toiletHeading - (100.0f * window.GetFrameTime());
+            if (toiletHeading < -360.0f) {
+                toiletHeading = toiletHeading + 360.0f;
+            }
         }
 
         if (raylib::Keyboard::IsKeyPressed(KEY_SPACE)) {
@@ -102,9 +118,13 @@ int main() {
             toiletYTarget = 0;
         }
 
+        if (raylib::Keyboard::IsKeyPressed(KEY_T)) {
+            showHighScore = !showHighScore;
+            hotdogState.showHighScore = showHighScore;
+        }
+
         float radians = DEG2RAD * toiletHeading;
         toiletSpeed = std::lerp(toiletSpeed, targetSpeed, window.GetFrameTime());
-        toiletHeading = std::lerp(toiletHeading, targetHeading, window.GetFrameTime());
         toiletPosition.y = std::lerp(toiletPosition.y, toiletYTarget, window.GetFrameTime() * 2);
         raylib::Vector3 velocity = { cos(radians) * toiletSpeed, 0, -sin(radians) * toiletSpeed };
         toiletPosition = toiletPosition + velocity * window.GetFrameTime();
@@ -114,7 +134,7 @@ int main() {
 
         if (checkCollision(toiletPosition, hotdogPosition)) {
             hotdogPosition = generateNewLocation();
-            state.hotdogCounter++;
+            hotdogState.hotdogCounter++;
             PlaySound(glizzy);
         }
 
@@ -133,7 +153,7 @@ int main() {
                 });
             }
             camera.EndMode();
-            GuiHotdogCounter(&state);
+            GuiHotdogCounter(&hotdogState); 
         }
         window.EndDrawing();
 
@@ -142,6 +162,21 @@ int main() {
     UnloadMusicStream(costcoGuys);
     UnloadSound(glizzy);
     audioDevice.Close();
+
+    std::ofstream outFile("../assets/data/score.txt", std::ofstream::out);
+    if (outFile.is_open()) {
+        if (hotdogState.hotdogCounter > hotdogState.highScore) {
+            outFile << hotdogState.hotdogCounter;
+            outFile.close();
+        }
+        else {
+            outFile << hotdogState.highScore;
+            outFile.close();
+        }
+    }
+    else {
+        std::cout << "Unable to open score file" << std::endl;
+    }
 
     return 0;
 }
