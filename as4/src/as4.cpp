@@ -42,6 +42,13 @@ int main() {
     raylib::Window window(windowWidth, windowHeight, title);
     window.SetState(FLAG_WINDOW_RESIZABLE);
 
+    raylib::AudioDevice audioDevice;
+    Sound glizzy = LoadSound("../assets/audio/squidward-says-glizzy.mp3");
+    raylib::Music costcoGuys = LoadMusicStream("../assets/audio/we-bring-the-boom.mp3");
+
+    costcoGuys.SetLooping(true);
+    PlayMusicStream(costcoGuys);
+
     raylib::Model toilet("../assets/Kenny-Furniture-Kit/toilet.glb");
     toilet.transform = raylib::Matrix::Identity().Scale(5);
     raylib::Model hotdog("../assets/Kenny-Food-Kit/meat-sausage.glb");
@@ -66,6 +73,10 @@ int main() {
     int hotdogCounter = 0;
 
     while(!window.ShouldClose()) {
+        SetMusicVolume(costcoGuys, 0.5f);
+        UpdateMusicStream(costcoGuys);
+        SetSoundVolume(glizzy, 0.5f);
+
         if (raylib::Keyboard::IsKeyDown(KEY_W)) {
             targetSpeed = 20.0f;
         }
@@ -103,6 +114,7 @@ int main() {
         if (checkCollision(toiletPosition, hotdogPosition)) {
             hotdogPosition = generateNewLocation();
             hotdogCounter++;
+            PlaySound(glizzy);
         }
 
         window.BeginDrawing();
@@ -124,6 +136,10 @@ int main() {
         window.EndDrawing();
 
     }
+
+    UnloadMusicStream(costcoGuys);
+    UnloadSound(glizzy);
+    audioDevice.Close();
 
     return 0;
 }
