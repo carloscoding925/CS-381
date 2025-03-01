@@ -15,5 +15,5 @@ make_includeable(assets/shaders/skybox.fs generated/skybox.fs)
 make_includeable(assets/shaders/skybox.vs generated/skybox.vs)
 
 configure_file(assets/textures/skybox.png textures/skybox.png COPYONLY)
-configure_file("assets/Kenny-Food-Kit/hot-dog-raw.glb" meshes/hot-dog-raw.glb COPYONLY)
+configure_file("assets/Kenny-Food-Kit/meat-sausage.glb" meshes/meat-sausage.glb COPYONLY)
 configure_file("assets/Kenny-Furniture-Kit/toilet.glb" meshes/toilet.glb COPYONLY)
