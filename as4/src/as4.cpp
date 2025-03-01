@@ -84,9 +84,9 @@ int main() {
     }
 
     while(!window.ShouldClose()) {
-        SetMusicVolume(costcoGuys, 0.5f);
+        SetMusicVolume(costcoGuys, hotdogState.musicSliderValue / 100.0f);
         UpdateMusicStream(costcoGuys);
-        SetSoundVolume(glizzy, 0.5f);
+        SetSoundVolume(glizzy, hotdogState.sfxSliderValue / 100.0f);
 
         if (raylib::Keyboard::IsKeyDown(KEY_W)) {
             targetSpeed = 30.0f;
@@ -121,6 +121,9 @@ int main() {
         if (raylib::Keyboard::IsKeyPressed(KEY_T)) {
             showHighScore = !showHighScore;
             hotdogState.showHighScore = showHighScore;
+        }
+        if (raylib::Keyboard::IsKeyPressed(KEY_V)) {
+            hotdogState.showAudioControls = !hotdogState.showAudioControls;
         }
 
         float radians = DEG2RAD * toiletHeading;
