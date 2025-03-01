@@ -5,6 +5,7 @@
 #include "../assets/skybox.hpp"
 #include <iostream>
 #include <raymath.h>
+#include "HotdogCounter.h"
 
 template<typename T>
 concept Transformer = requires(T t, raylib::Matrix m) {
@@ -49,6 +50,8 @@ int main() {
     costcoGuys.SetLooping(true);
     PlayMusicStream(costcoGuys);
 
+    HotdogCounterState state = InitHotdogCounter();
+
     raylib::Model toilet("../assets/Kenny-Furniture-Kit/toilet.glb");
     toilet.transform = raylib::Matrix::Identity().Scale(5);
     raylib::Model hotdog("../assets/Kenny-Food-Kit/meat-sausage.glb");
@@ -70,28 +73,26 @@ int main() {
     float targetHeading = 0;
     float toiletYTarget = 0;
 
-    int hotdogCounter = 0;
-
     while(!window.ShouldClose()) {
         SetMusicVolume(costcoGuys, 0.5f);
         UpdateMusicStream(costcoGuys);
         SetSoundVolume(glizzy, 0.5f);
 
         if (raylib::Keyboard::IsKeyDown(KEY_W)) {
-            targetSpeed = 20.0f;
+            targetSpeed = 30.0f;
         }
         else if (raylib::Keyboard::IsKeyDown(KEY_S)) {
-            targetSpeed = -20.0f;
+            targetSpeed = -30.0f;
         } 
         else {
             targetSpeed = 0.0f;
         }
 
         if (raylib::Keyboard::IsKeyDown(KEY_A)) {
-            targetHeading = targetHeading + 0.04f;
+            targetHeading = targetHeading + 0.2f;
         }
         else if (raylib::Keyboard::IsKeyDown(KEY_D)) {
-            targetHeading = targetHeading - 0.04;
+            targetHeading = targetHeading - 0.2f;
         }
 
         if (raylib::Keyboard::IsKeyPressed(KEY_SPACE)) {
@@ -113,7 +114,7 @@ int main() {
 
         if (checkCollision(toiletPosition, hotdogPosition)) {
             hotdogPosition = generateNewLocation();
-            hotdogCounter++;
+            state.hotdogCounter++;
             PlaySound(glizzy);
         }
 
@@ -132,6 +133,7 @@ int main() {
                 });
             }
             camera.EndMode();
+            GuiHotdogCounter(&state);
         }
         window.EndDrawing();
 
