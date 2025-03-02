@@ -8,11 +8,13 @@
 #include "HotdogCounter.h"
 #include <fstream>
 
+// Enforce raylib::Matrix 
 template<typename T>
 concept Transformer = requires(T t, raylib::Matrix m) {
     { t(m) } -> std::convertible_to<raylib::Matrix>;
 };
 
+// Draw model function
 void DrawBoundedModel(raylib::Model& model, Transformer auto transformer) {
     raylib::Matrix backup = model.transform;
     model.transform = transformer(backup);
@@ -22,6 +24,7 @@ void DrawBoundedModel(raylib::Model& model, Transformer auto transformer) {
     model.transform = backup;
 }
 
+// Check if toilet is within a certain radius of the hot dog
 bool checkCollision(raylib::Vector3& toilet, raylib::Vector3& hotdog) {
     float radius = 5.0f;
     if (std::fabs(toilet.x - hotdog.x) < radius && std::fabs(toilet.z - hotdog.z) < radius) {
@@ -31,12 +34,14 @@ bool checkCollision(raylib::Vector3& toilet, raylib::Vector3& hotdog) {
     return false;
 }
 
+// Generate new location for the hotdog within a -100 to 100 bounded area
 raylib::Vector3 generateNewLocation() {
     float x = std::rand() % 200 - 100;
     float z = std::rand() % 200 - 100;
     return raylib::Vector3{x, 0.0f, z};
 }
 
+// Costco guys ascii art
 std::string costcoGuysASCIIArt() {
     return R"(
     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣰⣶⣿⣿⣿⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀⠀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -61,6 +66,7 @@ std::string costcoGuysASCIIArt() {
     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣻⣽⡿⣟⣿⣿⣻⣿⣯⣿⣻⢿⣽⣻⣾⢯⡿⣽⣻⣽⢯⣟⣿⣟⣿⣿⣿⣿⣿⣿⢿⣽⢷⣞⣻⣿⣿⣿⣶⣎⡖⣄⡂⡄⢠⢀⣀⠀)";
 }
 
+// chillguy ascii art
 std::string chillGuyASCIIArt() {
     return R"(
     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣷⣄⠀⠀⠀⣀⣤⣤⣤⡀⠀⠀⠀⠀⠀⠀⠀
@@ -115,15 +121,18 @@ std::string chillGuyASCIIArt() {
 }
 
 int main() {
+    // Print ascii art
     std::cout << costcoGuysASCIIArt() << std::endl;
     std::cout << chillGuyASCIIArt() << std::endl;
 
+    // Window variables
     const int windowWidth = 1000;
     const int windowHeight = 700;
     const std::string title = "The Rizzler & Big AJ Present: Skibidi Toilet Glizzy Gobbler";
     raylib::Window window(windowWidth, windowHeight, title);
     window.SetState(FLAG_WINDOW_RESIZABLE);
 
+    // Audio variables
     raylib::AudioDevice audioDevice;
     Sound glizzy = LoadSound("../assets/audio/squidward-says-glizzy.mp3");
     raylib::Music costcoGuys = LoadMusicStream("../assets/audio/we-bring-the-boom.mp3");
@@ -133,6 +142,7 @@ int main() {
 
     HotdogCounterState hotdogState = InitHotdogCounter();
 
+    // Models
     raylib::Model toilet("../assets/Kenny-Furniture-Kit/toilet.glb");
     toilet.transform = raylib::Matrix::Identity().Scale(5);
     raylib::Model hotdog("../assets/Kenny-Food-Kit/meat-sausage.glb");
@@ -142,9 +152,11 @@ int main() {
     raylib::Texture floorTexture = raylib::Texture("../assets/textures/floor.png");
     floor.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = floorTexture;
 
+    // Sky and Camera
     cs381::SkyBox sky("textures/skybox.png");
     raylib::Camera3D camera(raylib::Vector3{0.0f, 20.0f, 40.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
 
+    // Toilet Physics
     raylib::Vector3 toiletPosition = { 0.0f, 0.0f, 0.0f };
     raylib::Vector3 hotdogPosition = { 0.0f, 0.0f, -50.0f };
 
@@ -154,6 +166,7 @@ int main() {
     float toiletYTarget = 0;
     bool showHighScore = false;
 
+    // Read high score from file
     std::ifstream readFile("../assets/data/score.txt");
     if (readFile.is_open()) {
         readFile >> hotdogState.highScore;
@@ -163,11 +176,14 @@ int main() {
         std::cout << "Unable to open score file" << std::endl;
     }
 
+    // Main game loop
     while(!window.ShouldClose()) {
+        // Update music and sound volume
         SetMusicVolume(costcoGuys, hotdogState.musicSliderValue / 100.0f);
         UpdateMusicStream(costcoGuys);
         SetSoundVolume(glizzy, hotdogState.sfxSliderValue / 100.0f);
 
+        // Handle user input
         if (raylib::Keyboard::IsKeyDown(KEY_W)) {
             targetSpeed = 30.0f;
         }
@@ -206,6 +222,7 @@ int main() {
             hotdogState.showAudioControls = !hotdogState.showAudioControls;
         }
 
+        // Calculate toilet position and update camera
         float radians = DEG2RAD * toiletHeading;
         toiletSpeed = std::lerp(toiletSpeed, targetSpeed, window.GetFrameTime());
         toiletPosition.y = std::lerp(toiletPosition.y, toiletYTarget, window.GetFrameTime() * 2);
@@ -215,12 +232,28 @@ int main() {
         camera.position = toiletPosition + raylib::Vector3{0.0f, 20.0f, 40.0f};
         camera.target = toiletPosition;
 
+        // Check if player has collided with hotdog
         if (checkCollision(toiletPosition, hotdogPosition)) {
             hotdogPosition = generateNewLocation();
             hotdogState.hotdogCounter++;
             PlaySound(glizzy);
         }
 
+        // Bound toilet to playable environment
+        if (toiletPosition.x > 100.0f) {
+            toiletPosition.x = 100.0f;
+        }
+        else if (toiletPosition.x < -100.0f) {
+            toiletPosition.x = -100.0f;
+        }
+        else if (toiletPosition.z > 100.0f) {
+            toiletPosition.z = 100.0f;
+        }
+        else if (toiletPosition.z < -100.0f) {
+            toiletPosition.z = -100.0f;
+        }
+
+        // Draw the environment
         window.BeginDrawing();
         {
             window.ClearBackground(raylib::Color::White());
@@ -242,10 +275,12 @@ int main() {
 
     }
 
+    // Unload resources
     UnloadMusicStream(costcoGuys);
     UnloadSound(glizzy);
     audioDevice.Close();
 
+    // Save high score to file
     std::ofstream outFile("../assets/data/score.txt", std::ofstream::out);
     if (outFile.is_open()) {
         if (hotdogState.hotdogCounter > hotdogState.highScore) {
