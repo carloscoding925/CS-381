@@ -45,5 +45,5 @@ The following steps will guide you through running the code for AS4. <br />
 The following are things I added for extra credit <br />
 - Free 10 Points (+10 points in rubric)
 - Terminal ASCII Art (costco guys and chillguy)
-- Points system (Press T to see high score and glizzy counter on top left, high score saved to a file as well for persistence)
+- Points system (Press T to see high score, + high score saved to a file as well for persistence)
 - (Objectively) funny name
