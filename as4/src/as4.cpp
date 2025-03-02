@@ -239,6 +239,11 @@ int main() {
             PlaySound(glizzy);
         }
 
+        // Update high score if player has beaten it
+        if (hotdogState.hotdogCounter > hotdogState.highScore) {
+            hotdogState.highScore = hotdogState.hotdogCounter;
+        }
+
         // Bound toilet to playable environment
         if (toiletPosition.x > 100.0f) {
             toiletPosition.x = 100.0f;
