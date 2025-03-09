@@ -32,9 +32,11 @@ struct Entity {
     float modelHeading;
     raylib::Vector3 position;
 
-    Entity(const raylib::Vector3& position, raylib::Model* model, float modelSpeed, float targetSpeed, float targetHeading, float modelHeading)
+    bool isRocket;
+
+    Entity(const raylib::Vector3& position, raylib::Model* model, float modelSpeed, float targetSpeed, float targetHeading, float modelHeading, bool isRocket)
     : 
-    position(position), model(model), modelSpeed(modelSpeed), targetSpeed(targetSpeed), targetHeading(targetHeading), modelHeading(modelHeading) {}
+    position(position), model(model), modelSpeed(modelSpeed), targetSpeed(targetSpeed), targetHeading(targetHeading), modelHeading(modelHeading), isRocket(isRocket) {}
 };
 
 int main() {
@@ -57,9 +59,9 @@ int main() {
     truck.transform = raylib::Matrix::Identity().Scale(30).RotateY(raylib::Degree(90));
 
     std::vector<Entity> entities;
-    entities.emplace_back(raylib::Vector3{0, 0, 0}, &rocket, 0.0f, 0.0f, 0.0f, 0.0f);
-    entities.emplace_back(raylib::Vector3{100, 0, 0}, &truck, 0.0f, 0.0f, 0.0f, 0.0f);
-    entities.emplace_back(raylib::Vector3{-100, 0, 0}, &truck, 0.0f, 0.0f, 0.0f, 0.0f);
+    entities.emplace_back(raylib::Vector3{0, 0, 0}, &rocket, 0.0f, 0.0f, 0.0f, 0.0f, true);
+    entities.emplace_back(raylib::Vector3{100, 0, 0}, &truck, 0.0f, 0.0f, 0.0f, 0.0f, false);
+    entities.emplace_back(raylib::Vector3{-100, 0, 0}, &truck, 0.0f, 0.0f, 0.0f, 0.0f, false);
     size_t selected_entity = 0;
 
     float timer = 0.0f;
@@ -94,9 +96,18 @@ int main() {
 
         for (auto& entity : entities) {
             float radians = DEG2RAD * entity.modelHeading;
+            float rocketRadians = DEG2RAD * (entity.modelHeading + 90);
             entity.modelSpeed = std::lerp(entity.modelSpeed, entity.targetSpeed, window.GetFrameTime());
             entity.modelHeading = std::lerp(entity.modelHeading, entity.targetHeading, window.GetFrameTime());
-            raylib::Vector3 velocity = { cos(radians) * entity.modelSpeed, 0, -sin(radians) * entity.modelSpeed };
+
+            raylib::Vector3 velocity;
+
+            if (entity.isRocket) {
+                velocity = raylib::Vector3{ -cos(rocketRadians) * entity.modelSpeed, sin(rocketRadians) * entity.modelSpeed, 0 };
+            }
+            else {
+                velocity = raylib::Vector3{ cos(radians) * entity.modelSpeed, 0, -sin(radians) * entity.modelSpeed };
+            }
             entity.position = entity.position + velocity * window.GetFrameTime();
         }
 
@@ -111,12 +122,16 @@ int main() {
                 for(size_t i = 0; i < entities.size(); i++) {
                     if (i == selected_entity) {
                         DrawBoundedModel(*entities[i].model, [&entities, i](raylib::Transform& t) {
-                            return t.Translate(entities[i].position).RotateY(raylib::Degree(entities[i].modelHeading));
+                            return entities[i].isRocket
+                            ? t.Translate(entities[i].position).RotateZ(raylib::Degree(-entities[i].modelHeading))
+                            : t.Translate(entities[i].position).RotateY(raylib::Degree(entities[i].modelHeading));
                         });
                     }
                     else {
                         DrawModel(*entities[i].model, [&entities, i](raylib::Transform& t) {
-                            return t.Translate(entities[i].position).RotateY(raylib::Degree(entities[i].modelHeading));
+                            return entities[i].isRocket
+                            ? t.Translate(entities[i].position).RotateZ(raylib::Degree(-entities[i].modelHeading))
+                            : t.Translate(entities[i].position).RotateY(raylib::Degree(entities[i].modelHeading));
                         });
                     }
                 }
