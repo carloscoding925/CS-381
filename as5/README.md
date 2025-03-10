@@ -51,11 +51,3 @@ The following steps will guide you through running the code for AS5. <br />
 - **SPACE**: Stops the Model Immediately (sets model velocity to 0)
 
 - **TAB**: Changes model selection
-
-## Extra Credit
-The following are things I added for extra credit <br />
-
-- Used a bool / timer with `IsKeyDown` instead of using `IsKeyPressed`
-- Added wheels which follow the truck
-- Implement camera movement which follows the truck
-- Added the ability to fly (`Arrow Up` - `Arrow Down`)
