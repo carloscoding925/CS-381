@@ -16,14 +16,14 @@ The following steps will guide you through compiling the code for AS6. <br />
 - We want to create a build folder here, so lets run the following: `mkdir build`
 - Lets go into our build folder so we can compile: `cd build`
 - In here, we can run the following commands to compile: `cmake ..` and `make`
-- Congratulations! You have successfully compiled the code for AS5.
+- Congratulations! You have successfully compiled the code for AS6.
 
 ## How to Run AS6
-The following steps will guide you through running the code for AS5. <br />
+The following steps will guide you through running the code for AS6. <br />
 - Lets navigate to the build folder of our project if youre not already there: `cd CS-381/as6/build`
-- In our previous guide we compiled the code for AS5, which should have produced an executable called `as6`
+- In our previous guide we compiled the code for AS6, which should have produced an executable called `as6`
 - Lets run this executable! Type `./as6`
-- Congratulations! You've ran AS5.
+- Congratulations! You've ran AS6.
 
 ## Controls Enumeration for AS6
 - **W**: Increases Velocity in the Models Current Direction
