@@ -52,12 +52,13 @@ struct MeshRenderComponent: cs381::Component {
 
 struct PhysicsProperties {
     float maxSpeed;
-    float turningSpeed;
+    raylib::Degree turningSpeed;
 };
 
 struct PhysicsComponent: cs381::Component {
     PhysicsProperties properties;
     float speed = 0;
+    float maxSpeed = 0;
     bool isRocket = false;
 
     PhysicsComponent(cs381::Entity& e, const PhysicsProperties& props)
@@ -70,10 +71,23 @@ struct PhysicsComponent: cs381::Component {
         else {
             auto& transform = Object().Transform();
             float radians = DEG2RAD * Object().Transform().heading;
-            speed = std::lerp(speed, properties.maxSpeed, dt);
+            speed = std::lerp(speed, maxSpeed, dt);
             raylib::Vector3 velocity = { cos(radians) * speed, 0, -sin(radians) * speed };
             transform.position = transform.position + velocity * dt; 
         }
+    }
+
+    void Accelerate() {
+        maxSpeed = properties.maxSpeed;
+    }
+
+    void SlowDown() {
+        maxSpeed = 0;
+    }
+
+    void Stop() {
+        maxSpeed = 0;
+        speed = 0;
     }
 
 };
@@ -89,31 +103,33 @@ struct InputComponent: cs381::Component {
     void Tick(float dt) override {
         (*input)["Forward"].AddPressedCallback([this](){
             if (*selectedEntityIndex == entityIndex) {
-                
+                Object().GetComponent<PhysicsComponent>()->get().Accelerate();
             }
         });
 
         (*input)["Backward"].AddPressedCallback([this](){
             if (*selectedEntityIndex == entityIndex) {
-
+                Object().GetComponent<PhysicsComponent>()->get().SlowDown();
             }
         });
 
         (*input)["Left"].AddPressedCallback([this](){
             if (*selectedEntityIndex == entityIndex) {
-
+                auto& heading = Object().Transform().heading;
+                heading = raylib::Degree(heading - Object().GetComponent<PhysicsComponent>()->get().properties.turningSpeed);
             }
         });
 
         (*input)["Right"].AddPressedCallback([this](){
             if (*selectedEntityIndex == entityIndex) {
-
+                auto& heading = Object().Transform().heading;
+                heading = raylib::Degree(heading + Object().GetComponent<PhysicsComponent>()->get().properties.turningSpeed);
             }
         });
 
         (*input)["Stop"].AddPressedCallback([this](){
             if (*selectedEntityIndex == entityIndex) {
-
+                Object().GetComponent<PhysicsComponent>()->get().Stop();
             }
         });
     }
@@ -147,8 +163,8 @@ int main() {
     input["Stop"] = raylib::Action::key(KEY_SPACE).move();
 
     PhysicsProperties entityProperties[] = {
-        { 20.0f, 0.0f },
-        { 20.0f, 0.0f }
+        { 30.0f, raylib::Degree(30) },
+        { 20.0f, raylib::Degree(20) }
     };
 
     std::vector<cs381::Entity> entities;
@@ -169,6 +185,8 @@ int main() {
     entities[selectedEntity].GetComponent<MeshRenderComponent>()->get().drawBoundingBox = true;
 
     while(!window.ShouldClose()) {
+        input.PollEvents();
+
         window.BeginDrawing();
         {
             camera.BeginMode();
