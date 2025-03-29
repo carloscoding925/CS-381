@@ -52,7 +52,7 @@ struct MeshRenderComponent: cs381::Component {
 
 struct PhysicsProperties {
     float maxSpeed;
-    raylib::Degree turningSpeed;
+    float turningSpeed;
 };
 
 struct PhysicsComponent: cs381::Component {
@@ -90,6 +90,15 @@ struct PhysicsComponent: cs381::Component {
         speed = 0;
     }
 
+    void TurnLeft(float dt) {
+        auto& transform = Object().Transform();
+        transform.heading = transform.heading + raylib::Degree(dt);
+    }
+
+    void TurnRight(float dt) {
+        auto& transform = Object().Transform();
+        transform.heading = transform.heading - raylib::Degree(dt);
+    } 
 };
 
 struct InputComponent: cs381::Component {
@@ -113,17 +122,15 @@ struct InputComponent: cs381::Component {
             }
         });
 
-        (*input)["Left"].AddPressedCallback([this](){
+        (*input)["Left"].AddPressedCallback([this, dt](){
             if (*selectedEntityIndex == entityIndex) {
-                auto& heading = Object().Transform().heading;
-                heading = raylib::Degree(heading - Object().GetComponent<PhysicsComponent>()->get().properties.turningSpeed);
+                Object().GetComponent<PhysicsComponent>()->get().TurnLeft(dt);
             }
         });
 
-        (*input)["Right"].AddPressedCallback([this](){
+        (*input)["Right"].AddPressedCallback([this, dt](){
             if (*selectedEntityIndex == entityIndex) {
-                auto& heading = Object().Transform().heading;
-                heading = raylib::Degree(heading + Object().GetComponent<PhysicsComponent>()->get().properties.turningSpeed);
+                Object().GetComponent<PhysicsComponent>()->get().TurnRight(dt);
             }
         });
 
@@ -163,8 +170,8 @@ int main() {
     input["Stop"] = raylib::Action::key(KEY_SPACE).move();
 
     PhysicsProperties entityProperties[] = {
-        { 30.0f, raylib::Degree(30) },
-        { 20.0f, raylib::Degree(20) }
+        { 30.0f, 0.0f },
+        { 20.0f, 0.0f }
     };
 
     std::vector<cs381::Entity> entities;
@@ -175,6 +182,7 @@ int main() {
     rocketEntity.AddComponent<PhysicsComponent>(entityProperties[0]);
     rocketEntity.AddComponent<InputComponent>(&input, &selectedEntity, 0);
     rocketEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{0.0f, 0.0f, 0.0f};
+    rocketEntity.GetComponent<PhysicsComponent>()->get().isRocket = true; 
 
     cs381::Entity& truckEntity = entities.emplace_back();
     truckEntity.AddComponent<MeshRenderComponent>(&truck);
