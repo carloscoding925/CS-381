@@ -104,12 +104,11 @@ struct PhysicsComponent : cs381::Component {
     }
 
     void SlowDown() {
-        maxSpeed = 0;
+        maxSpeed = properties.maxSpeed / 2;
     }
 
     void Stop() {
         maxSpeed = 0;
-        speed = 0;
     }
 
     void TurnLeft(float dt) {
