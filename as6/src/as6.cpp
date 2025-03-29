@@ -191,6 +191,11 @@ int main() {
     raylib::Texture grassTexture = raylib::Texture("../assets/textures/grass.png");
     grass.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grassTexture;
 
+    raylib::AudioDevice audioDevice;
+    raylib::Music wind = LoadMusicStream("../assets/audio/wind.mp3");
+    wind.SetLooping(true);
+    PlayMusicStream(wind);
+
     raylib::Model rocket("../assets/Kenny Space Kit/rocketA.glb");
     raylib::Model truck("../assets/Kenny Car Kit/truck.glb");
     raylib::Model ambulance("../assets/Kenny Car Kit/ambulance.glb");
@@ -265,6 +270,8 @@ int main() {
 
     while(!window.ShouldClose()) {
         input.PollEvents();
+        SetMusicVolume(wind, 0.5f);
+        UpdateMusicStream(wind);
 
         window.BeginDrawing();
         {
@@ -294,6 +301,9 @@ int main() {
             }
         }
     }
+
+    UnloadMusicStream(wind);
+    audioDevice.Close();
 
     return 0;
 }
