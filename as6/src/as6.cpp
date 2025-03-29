@@ -5,7 +5,7 @@
 #include "CO.hpp"
 #include <iostream>
 
-template<typename T>
+template <typename T>
 concept Transformer = requires(T t, raylib::Matrix m) {
     { t(m) } -> std::convertible_to<raylib::Matrix>;
 };
@@ -28,6 +28,7 @@ void DrawModel(raylib::Model& model, Transformer auto transformer) {
 struct MeshRenderComponent: cs381::Component {
     raylib::Model* model = nullptr;
     bool drawBoundingBox = false;
+    bool isRocket = false;
 
     MeshRenderComponent(cs381::Entity& e, raylib::Model* model)
         : cs381::Component(e), model(model) {}
@@ -35,52 +36,80 @@ struct MeshRenderComponent: cs381::Component {
     void Tick(float dt) override {
         if (model == nullptr) { return; }
 
-        if (drawBoundingBox) {
-            DrawBoundedModel(*model, [this](raylib::Matrix& matrix){
-                auto& transform = Object().Transform();
-                return matrix.Translate(transform.position).RotateY(transform.heading);
-            });
+        if (isRocket) {
+            if (drawBoundingBox) {
+                DrawBoundedModel(*model, [this](raylib::Matrix& matrix){
+                    auto& transform = Object().Transform();
+                    return matrix.Translate(transform.position).RotateZ(transform.heading * raylib::Degree(-1));
+                });
+            }
+            else {
+                DrawModel(*model, [this](raylib::Matrix& matrix){
+                    auto& transform = Object().Transform();
+                    return matrix.Translate(transform.position).RotateZ(transform.heading * raylib::Degree(-1));
+                });
+            }
         }
         else {
-            DrawModel(*model, [this](raylib::Matrix& matrix){
-                auto& transform = Object().Transform();
-                return matrix.Translate(transform.position).RotateY(transform.heading);
-            });
+            if (drawBoundingBox) {
+                DrawBoundedModel(*model, [this](raylib::Matrix& matrix){
+                    auto& transform = Object().Transform();
+                    return matrix.Translate(transform.position).RotateY(transform.heading);
+                });
+            }
+            else {
+                DrawModel(*model, [this](raylib::Matrix& matrix){
+                    auto& transform = Object().Transform();
+                    return matrix.Translate(transform.position).RotateY(transform.heading);
+                });
+            }
         }
     }
 };
 
 struct PhysicsProperties {
     float maxSpeed;
-    float acceleration;
-    float turningRate;
+    float turningSpeed;
 };
 
 struct PhysicsComponent : cs381::Component {
-    raylib::Vector3 velocity;
-    float speed;
     PhysicsProperties properties;
+    float speed = 0;
+    float maxSpeed = 0;
 
     PhysicsComponent(cs381::Entity& e, const PhysicsProperties& props)
-        : cs381::Component(e), velocity{0, 0, 0}, speed(0), properties(props) {}
+        : cs381::Component(e), properties(props) {}
 
     void Tick(float dt) override {
         auto& transform = Object().Transform();
-        float radians = DEG2RAD * transform.heading;
-        velocity = raylib::Vector3{ cos(radians) * speed, 0, -sin(radians) * speed };
-        transform.position = transform.position + velocity * dt;
+        float radians = DEG2RAD * Object().Transform().heading;
+        speed = std::lerp(speed, maxSpeed, dt);
+        raylib::Vector3 velocity = { cos(radians) * speed, 0, -sin(radians) * speed };
+        transform.position = transform.position + velocity * dt; 
     }
 
-    void Accelerate(float amount) {
-        speed += amount * properties.acceleration;
-        if (speed > properties.maxSpeed) speed = properties.maxSpeed;
-        if (speed < 0) speed = 0;
+    void Accelerate() {
+        maxSpeed = properties.maxSpeed;
     }
 
-    void Turn(float amount) {
+    void SlowDown() {
+        maxSpeed = 0;
+    }
+
+    void Stop() {
+        maxSpeed = 0;
+        speed = 0;
+    }
+
+    void TurnLeft(float dt) {
         auto& transform = Object().Transform();
-        transform.heading += amount * properties.turningRate;
+        transform.heading = transform.heading + raylib::Degree(dt);
     }
+
+    void TurnRight(float dt) {
+        auto& transform = Object().Transform();
+        transform.heading = transform.heading - raylib::Degree(dt);
+    } 
 };
 
 struct InputComponent : cs381::Component {
@@ -94,31 +123,31 @@ struct InputComponent : cs381::Component {
     void Tick(float dt) override {
         (*input)["Forward"].AddPressedCallback([this](){
             if (*selectedEntityIndex == entityIndex) {
-                Object().GetComponent<PhysicsComponent>()->get().Accelerate(100);
+                Object().GetComponent<PhysicsComponent>()->get().Accelerate();
             }
         });
 
         (*input)["Backward"].AddPressedCallback([this](){
             if (*selectedEntityIndex == entityIndex) {
-                Object().GetComponent<PhysicsComponent>()->get().Accelerate(-100);
+                Object().GetComponent<PhysicsComponent>()->get().SlowDown();
             }
         });
 
-        (*input)["Left"].AddPressedCallback([this](){
+        (*input)["Left"].AddPressedCallback([this, dt](){
             if (*selectedEntityIndex == entityIndex) {
-                Object().GetComponent<PhysicsComponent>()->get().Turn(10);
+                Object().GetComponent<PhysicsComponent>()->get().TurnLeft(dt);
             }
         });
 
-        (*input)["Right"].AddPressedCallback([this](){
+        (*input)["Right"].AddPressedCallback([this, dt](){
             if (*selectedEntityIndex == entityIndex) {
-                Object().GetComponent<PhysicsComponent>()->get().Turn(-10);
+                Object().GetComponent<PhysicsComponent>()->get().TurnRight(dt);
             }
         });
 
         (*input)["Stop"].AddPressedCallback([this](){
             if (*selectedEntityIndex == entityIndex) {
-                Object().GetComponent<PhysicsComponent>()->get().speed = 0;
+                Object().GetComponent<PhysicsComponent>()->get().Stop();
             }
         });
     }
@@ -145,15 +174,14 @@ int main() {
     raylib::Model sportsSedan("../assets/Kenny Car Kit/sedan-sports.glb");
     raylib::Model fireTruck("../assets/Kenny Car Kit/firetruck.glb");
 
-    PhysicsProperties carProperties[] = {
-        { 100.0f, 10.0f, 45.0f }, // Truck
-        { 120.0f, 12.0f, 50.0f }, // Ambulance
-        { 80.0f, 8.0f, 40.0f },   // Garbage Truck
-        { 150.0f, 15.0f, 60.0f }, // Sports Sedan
-        { 90.0f, 9.0f, 45.0f }    // Fire Truck
+    PhysicsProperties properties[] = {
+        { 0.0f, 0.0f }, // Rocket
+        { 0.0f, 0.0f }, // Truck
+        { 0.0f, 0.0f }, // Ambulance
+        { 0.0f, 0.0f },   // Garbage Truck
+        { 0.0f, 0.0f }, // Sports Sedan
+        { 0.0f, 0.0f },    // Fire Truck
     };
-    
-    PhysicsProperties rocketProperties = { 200.0f, 20.0f, 30.0f };
 
     rocket.transform = raylib::Matrix::Identity().Scale(30);
     truck.transform = raylib::Matrix::Identity().Scale(30).RotateY(raylib::Degree(90));
@@ -174,37 +202,38 @@ int main() {
 
     cs381::Entity& rocketEntity = entities.emplace_back();
     rocketEntity.AddComponent<MeshRenderComponent>(&rocket);
-    rocketEntity.AddComponent<PhysicsComponent>(rocketProperties);
+    rocketEntity.AddComponent<PhysicsComponent>(properties[0]);
     rocketEntity.AddComponent<InputComponent>(&input, &selectedEntity, 0);
     rocketEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{0, 0, 0};
+    rocketEntity.GetComponent<MeshRenderComponent>()->get().isRocket = true;
 
     cs381::Entity& truckEntity = entities.emplace_back();
     truckEntity.AddComponent<MeshRenderComponent>(&truck);
-    truckEntity.AddComponent<PhysicsComponent>(carProperties[0]);
+    truckEntity.AddComponent<PhysicsComponent>(properties[1]);
     truckEntity.AddComponent<InputComponent>(&input, &selectedEntity, 1);
     truckEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{100, 0, 0};
 
     cs381::Entity& ambulanceEntity = entities.emplace_back();
     ambulanceEntity.AddComponent<MeshRenderComponent>(&ambulance);
-    ambulanceEntity.AddComponent<PhysicsComponent>(carProperties[1]);
+    ambulanceEntity.AddComponent<PhysicsComponent>(properties[2]);
     ambulanceEntity.AddComponent<InputComponent>(&input, &selectedEntity, 2);
     ambulanceEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-100, 0, 0};
 
     cs381::Entity& garbageTruckEntity = entities.emplace_back();
     garbageTruckEntity.AddComponent<MeshRenderComponent>(&garbageTruck);
-    garbageTruckEntity.AddComponent<PhysicsComponent>(carProperties[2]);
+    garbageTruckEntity.AddComponent<PhysicsComponent>(properties[3]);
     garbageTruckEntity.AddComponent<InputComponent>(&input, &selectedEntity, 3);
     garbageTruckEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{200, 0, 0};
 
     cs381::Entity& sportsSedanEntity = entities.emplace_back();
     sportsSedanEntity.AddComponent<MeshRenderComponent>(&sportsSedan);
-    sportsSedanEntity.AddComponent<PhysicsComponent>(carProperties[3]);
+    sportsSedanEntity.AddComponent<PhysicsComponent>(properties[4]);
     sportsSedanEntity.AddComponent<InputComponent>(&input, &selectedEntity, 4);
     sportsSedanEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-200, 0, 0};
 
     cs381::Entity& fireTruckEntity = entities.emplace_back();
     fireTruckEntity.AddComponent<MeshRenderComponent>(&fireTruck);
-    fireTruckEntity.AddComponent<PhysicsComponent>(carProperties[4]);
+    fireTruckEntity.AddComponent<PhysicsComponent>(properties[5]);
     fireTruckEntity.AddComponent<InputComponent>(&input, &selectedEntity, 5);
     fireTruckEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{300, 0, 0};
 

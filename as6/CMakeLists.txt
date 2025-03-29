@@ -16,4 +16,8 @@ make_includeable(assets/shaders/skybox.vs generated/skybox.vs)
 
 configure_file(assets/textures/skybox.png textures/skybox.png COPYONLY)
 configure_file("assets/Kenny Car Kit/truck.glb" meshes/truck.glb COPYONLY)
+configure_file("assets/Kenny Car Kit/ambulance.glb" meshes/ambulance.glb COPYONLY)
+configure_file("assets/Kenny Car Kit/garbage-truck.glb" meshes/garbage-truck.glb COPYONLY)
+configure_file("assets/Kenny Car Kit/sedan-sports.glb" meshes/sedan-sports.glb COPYONLY)
+configure_file("assets/Kenny Car Kit/firetruck.glb" meshes/firetruck.glb COPYONLY)
 configure_file("assets/Kenny Space Kit/rocketA.glb" meshes/rocketA.glb COPYONLY)
