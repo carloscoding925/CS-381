@@ -103,12 +103,26 @@ struct PhysicsComponent : cs381::Component {
 
     void TurnLeft(float dt) {
         auto& transform = Object().Transform();
-        transform.heading = transform.heading + raylib::Degree(dt);
+        transform.heading = transform.heading + raylib::Degree(dt * properties.turningSpeed);
+
+        if (transform.heading > 360) {
+            transform.heading = transform.heading - raylib::Degree(360);
+        }
+        else if (transform.heading < -360) {
+            transform.heading = transform.heading + raylib::Degree(360);
+        }
     }
 
     void TurnRight(float dt) {
         auto& transform = Object().Transform();
-        transform.heading = transform.heading - raylib::Degree(dt);
+        transform.heading = transform.heading - raylib::Degree(dt * properties.turningSpeed);
+        
+        if (transform.heading > 360) {
+            transform.heading = transform.heading - raylib::Degree(360);
+        }
+        else if (transform.heading < 0) {
+            transform.heading = transform.heading + raylib::Degree(360);
+        }
     } 
 };
 
@@ -178,9 +192,9 @@ int main() {
         { 0.0f, 0.0f }, // Rocket
         { 0.0f, 0.0f }, // Truck
         { 0.0f, 0.0f }, // Ambulance
-        { 0.0f, 0.0f },   // Garbage Truck
-        { 0.0f, 0.0f }, // Sports Sedan
-        { 0.0f, 0.0f },    // Fire Truck
+        { 0.0f, 0.0f }, // Garbage Truck
+        { 100.0f, 2.0f }, // Sports Sedan
+        { 0.0f, 0.0f }, // Fire Truck
     };
 
     rocket.transform = raylib::Matrix::Identity().Scale(30);
