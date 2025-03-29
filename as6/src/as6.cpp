@@ -81,11 +81,21 @@ struct PhysicsComponent : cs381::Component {
         : cs381::Component(e), properties(props) {}
 
     void Tick(float dt) override {
-        auto& transform = Object().Transform();
-        float radians = DEG2RAD * Object().Transform().heading;
-        speed = std::lerp(speed, maxSpeed, dt);
-        raylib::Vector3 velocity = { cos(radians) * speed, 0, -sin(radians) * speed };
-        transform.position = transform.position + velocity * dt; 
+        bool isRocket = Object().GetComponent<MeshRenderComponent>()->get().isRocket;
+        if (isRocket) {
+            auto& transform = Object().Transform();
+            float radians = DEG2RAD * (Object().Transform().heading + raylib::Degree(90));
+            speed = std::lerp(speed, maxSpeed, dt);
+            raylib::Vector3 velocity = { -cos(radians) * speed, sin(radians) * speed, 0 };
+            transform.position = transform.position + velocity * dt;
+        }
+        else {
+            auto& transform = Object().Transform();
+            float radians = DEG2RAD * Object().Transform().heading;
+            speed = std::lerp(speed, maxSpeed, dt);
+            raylib::Vector3 velocity = { cos(radians) * speed, 0, -sin(radians) * speed };
+            transform.position = transform.position + velocity * dt; 
+        }
     }
 
     void Accelerate() {
@@ -189,12 +199,12 @@ int main() {
     raylib::Model fireTruck("../assets/Kenny Car Kit/firetruck.glb");
 
     PhysicsProperties properties[] = {
-        { 0.0f, 0.0f }, // Rocket
-        { 0.0f, 0.0f }, // Truck
-        { 0.0f, 0.0f }, // Ambulance
-        { 0.0f, 0.0f }, // Garbage Truck
+        { 10.0f, 1.0f }, // Rocket
+        { 40.0f, 1.5f }, // Truck
+        { 60.0f, 1.0f }, // Ambulance
+        { 20.0f, 0.5f }, // Garbage Truck
         { 100.0f, 2.0f }, // Sports Sedan
-        { 0.0f, 0.0f }, // Fire Truck
+        { 80.0f, 1.0f }, // Fire Truck
     };
 
     rocket.transform = raylib::Matrix::Identity().Scale(30);
