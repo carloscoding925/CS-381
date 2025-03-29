@@ -27,9 +27,11 @@ The following steps will guide you through running the code for AS6. <br />
 
 ## Controls Enumeration for AS6
 - **W**: Increases Velocity in the Models Current Direction
-- **S**: Decreases the Models Velocity to 0
+- **S**: Decreases the Models Velocity by half
 - **A**: Turns the Model Left (increases heading)
 - **D**: Turns the Model Right (decreases heading)
-- **SPACE**: Stops the Model Immediately (sets model velocity to 0)
-
+- **SPACE**: Slows the model down to a stop
 - **TAB**: Changes model selection
+
+## Extra Credit
+- Added wind background noise
