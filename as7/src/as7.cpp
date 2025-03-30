@@ -120,6 +120,26 @@ struct MovementComponent: cs381::Component {
     }
 };
 
+struct CollisionComponent: cs381::Component {
+    cs381::Entity* topCar;
+    cs381::Entity* bottomCar;
+
+    CollisionComponent(cs381::Entity& e, cs381::Entity* topCar, cs381::Entity* bottomCar)
+        : cs381::Component(e), topCar(topCar), bottomCar(bottomCar) {}
+
+    void Tick(float dt) override {
+        auto& position = Object().Transform().position;
+        auto& topCarPosition = topCar->Transform().position;
+        auto& bottomCarPosition = bottomCar->Transform().position;
+
+       
+    }
+};
+
+struct GameStateComponent: cs381::Component {
+
+};
+
 int main() {
     const int windowWidth = 1000;
     const int windowHeight = 700;
@@ -137,11 +157,6 @@ int main() {
 
     std::vector<cs381::Entity> entities;
 
-    cs381::Entity& fireTruckEntity = entities.emplace_back();
-    fireTruckEntity.AddComponent<MeshRenderComponent>(&fireTruck);
-    fireTruckEntity.AddComponent<GravityComponent>();
-    fireTruckEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{0, 0, 0};
-
     cs381::Entity& topCar = entities.emplace_back();
     topCar.AddComponent<MeshRenderComponent>(&police);
     topCar.AddComponent<MovementComponent>();
@@ -152,24 +167,30 @@ int main() {
     bottomCar.AddComponent<MovementComponent>();
     bottomCar.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-250, -80, 0};
 
+    cs381::Entity& fireTruckEntity = entities.emplace_back();
+    fireTruckEntity.AddComponent<MeshRenderComponent>(&fireTruck);
+    fireTruckEntity.AddComponent<GravityComponent>();
+    fireTruckEntity.AddComponent<CollisionComponent>(&entities[0], &entities[1]);
+    fireTruckEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{0, 0, 0};
+
     bool spacePressed = false;
     bool started = false;
 
     while(!window.ShouldClose()) {
         if (!started && raylib::Keyboard::IsKeyDown(KEY_SPACE)) {
-            entities[0].GetComponent<GravityComponent>()->get().Start();
+            entities[0].GetComponent<MovementComponent>()->get().Start();
             entities[1].GetComponent<MovementComponent>()->get().Start();
-            entities[2].GetComponent<MovementComponent>()->get().Start();
+            entities[2].GetComponent<GravityComponent>()->get().Start();
             started = true;
         }
         if (raylib::Keyboard::IsKeyDown(KEY_SPACE) && !spacePressed) {
-            entities[0].GetComponent<GravityComponent>()->get().Jump();
+            entities[2].GetComponent<GravityComponent>()->get().Jump();
         }
         spacePressed = raylib::Keyboard::IsKeyDown(KEY_SPACE);
 
         int heightChange = rand() % 100;
+        entities[0].GetComponent<MovementComponent>()->get().heightChange = heightChange;
         entities[1].GetComponent<MovementComponent>()->get().heightChange = heightChange;
-        entities[2].GetComponent<MovementComponent>()->get().heightChange = heightChange;
 
         window.BeginDrawing();
         {
