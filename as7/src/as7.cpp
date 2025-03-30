@@ -197,7 +197,7 @@ struct GameStateComponent: cs381::Component {
 int main() {
     const int windowWidth = 1000;
     const int windowHeight = 700;
-    const std::string title = "CS 381 - Assignment 7";
+    const std::string title = "Flappy Fire Truck";
     raylib::Window window(windowWidth, windowHeight, title);
     window.SetState(FLAG_WINDOW_RESIZABLE);
 
