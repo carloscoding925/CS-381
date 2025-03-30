@@ -41,6 +41,23 @@ struct MeshRenderComponent: cs381::Component {
     }
 };
 
+struct GravityComponent: cs381::Component {
+    raylib::Vector3 gravity = {0.0f, -9.81f, 0.0f};
+
+    GravityComponent(cs381::Entity& e)
+        : cs381::Component(e) {}
+
+    void Tick(float dt) override {
+        auto& transform = Object().Transform();
+        transform.position = transform.position + gravity * (10 * dt);
+    }
+
+    void Jump() {
+        auto& transform = Object().Transform();
+        transform.position.y = transform.position.y + (50);
+    }
+};
+
 int main() {
     const int windowWidth = 1000;
     const int windowHeight = 700;
@@ -58,9 +75,16 @@ int main() {
 
     cs381::Entity& fireTruckEntity = entities.emplace_back();
     fireTruckEntity.AddComponent<MeshRenderComponent>(&fireTruck);
+    fireTruckEntity.AddComponent<GravityComponent>();
     fireTruckEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{0, 0, 0};
 
+    bool spacePressed = false;
     while(!window.ShouldClose()) {
+        if (raylib::Keyboard::IsKeyDown(KEY_SPACE) && !spacePressed) {
+            fireTruckEntity.GetComponent<GravityComponent>()->get().Jump();
+        }
+        spacePressed = raylib::Keyboard::IsKeyDown(KEY_SPACE);
+
         window.BeginDrawing();
         {
             camera.BeginMode();
