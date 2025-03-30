@@ -16,3 +16,4 @@ make_includeable(assets/shaders/skybox.vs generated/skybox.vs)
 
 configure_file(assets/textures/skybox.png textures/skybox.png COPYONLY)
 configure_file("assets/Kenny Car Kit/firetruck.glb" meshes/firetruck.glb COPYONLY)
+configure_file("assets/Kenny Car Kit/police.glb" meshes/police.glb COPYONLY)
