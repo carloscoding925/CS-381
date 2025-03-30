@@ -4,6 +4,8 @@
 ### Welcome to Flappy Fire Truck!
 In this game, you control a fire truck and you must avoid police cars which are attempting to prevent you <br />
 from reaching your destination. Dodge as many police cars as you can to get a bigger and bigger score! <br />
+You must go in between the cop cars, touch one or go above/below them and it is game over! Additionally, <br />
+fall off the screen and it's game over! <br />
 
 ## How to Fetch the Raylib Submodule
 The following steps will guide you through pulling the repo from github and fetching the `raylib-cpp` submodule. <br />
