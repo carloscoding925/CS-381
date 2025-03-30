@@ -123,6 +123,7 @@ struct MovementComponent: cs381::Component {
 struct CollisionComponent: cs381::Component {
     cs381::Entity* topCar;
     cs381::Entity* bottomCar;
+    bool collisionDetected = false;
 
     CollisionComponent(cs381::Entity& e, cs381::Entity* topCar, cs381::Entity* bottomCar)
         : cs381::Component(e), topCar(topCar), bottomCar(bottomCar) {}
@@ -132,12 +133,51 @@ struct CollisionComponent: cs381::Component {
         auto& topCarPosition = topCar->Transform().position;
         auto& bottomCarPosition = bottomCar->Transform().position;
 
-       
+        if (std::fabs(position.x - topCarPosition.x) < 20.0f && position.y > topCarPosition.y) {
+            collisionDetected = true;
+        }
+        else if (std::fabs(position.x - bottomCarPosition.x) < 20.0f && position.y < bottomCarPosition.y) {
+            collisionDetected = true;
+        }
+        else if (position.y < -300.0f) {
+            collisionDetected = true;
+        }
     }
 };
 
 struct GameStateComponent: cs381::Component {
+    GameStateComponent(cs381::Entity& e)
+        : cs381::Component(e) {}
 
+    void Tick(float dt) override {
+
+    }
+
+    void StopTruck() {
+        Object().GetComponent<GravityComponent>()->get().Stop();
+    }
+
+    void StopCars() {
+        Object().GetComponent<MovementComponent>()->get().Stop();
+    }
+
+    void ResetTruck() {
+        auto& transform = Object().Transform();
+        transform.position.x = 0;
+        transform.position.y = 0;
+    }
+    
+    void ResetTopCar() {
+        auto& transform = Object().Transform();
+        transform.position.x = -250;
+        transform.position.y = 80;
+    }
+
+    void ResetBottomCar() {
+        auto& transform = Object().Transform();
+        transform.position.x = -250;
+        transform.position.y = -80;
+    }
 };
 
 int main() {
@@ -160,17 +200,20 @@ int main() {
     cs381::Entity& topCar = entities.emplace_back();
     topCar.AddComponent<MeshRenderComponent>(&police);
     topCar.AddComponent<MovementComponent>();
+    topCar.AddComponent<GameStateComponent>();
     topCar.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-250, 80, 0};
 
     cs381::Entity& bottomCar = entities.emplace_back();
     bottomCar.AddComponent<MeshRenderComponent>(&police);
     bottomCar.AddComponent<MovementComponent>();
+    bottomCar.AddComponent<GameStateComponent>();
     bottomCar.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-250, -80, 0};
 
     cs381::Entity& fireTruckEntity = entities.emplace_back();
     fireTruckEntity.AddComponent<MeshRenderComponent>(&fireTruck);
     fireTruckEntity.AddComponent<GravityComponent>();
     fireTruckEntity.AddComponent<CollisionComponent>(&entities[0], &entities[1]);
+    fireTruckEntity.AddComponent<GameStateComponent>();
     fireTruckEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{0, 0, 0};
 
     bool spacePressed = false;
@@ -182,8 +225,9 @@ int main() {
             entities[1].GetComponent<MovementComponent>()->get().Start();
             entities[2].GetComponent<GravityComponent>()->get().Start();
             started = true;
+            std::cout << "Game Started!" << std::endl;
         }
-        if (raylib::Keyboard::IsKeyDown(KEY_SPACE) && !spacePressed) {
+        if (raylib::Keyboard::IsKeyDown(KEY_SPACE) && !spacePressed && !entities[2].GetComponent<CollisionComponent>()->get().collisionDetected) {
             entities[2].GetComponent<GravityComponent>()->get().Jump();
         }
         spacePressed = raylib::Keyboard::IsKeyDown(KEY_SPACE);
@@ -191,6 +235,21 @@ int main() {
         int heightChange = rand() % 100;
         entities[0].GetComponent<MovementComponent>()->get().heightChange = heightChange;
         entities[1].GetComponent<MovementComponent>()->get().heightChange = heightChange;
+
+        if (entities[2].GetComponent<CollisionComponent>()->get().collisionDetected) {
+            entities[0].GetComponent<GameStateComponent>()->get().StopCars();
+            entities[1].GetComponent<GameStateComponent>()->get().StopCars();
+            entities[2].GetComponent<GameStateComponent>()->get().StopTruck();
+        }
+
+        if (entities[2].GetComponent<CollisionComponent>()->get().collisionDetected && raylib::Keyboard::IsKeyDown(KEY_R)) {
+            entities[0].GetComponent<GameStateComponent>()->get().ResetTopCar();
+            entities[1].GetComponent<GameStateComponent>()->get().ResetBottomCar();
+            entities[2].GetComponent<GameStateComponent>()->get().ResetTruck();
+
+            entities[2].GetComponent<CollisionComponent>()->get().collisionDetected = false;
+            started = false;
+        }
 
         window.BeginDrawing();
         {
