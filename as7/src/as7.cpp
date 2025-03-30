@@ -25,6 +25,22 @@ void DrawModel(raylib::Model& model, Transformer auto transformer) {
     model.transform = backup;
 }
 
+struct MeshRenderComponent: cs381::Component {
+    raylib::Model* model = nullptr;
+
+    MeshRenderComponent(cs381::Entity& e, raylib::Model* model)
+        : cs381::Component(e), model(model) {}
+
+    void Tick(float dt) {
+        if (model == nullptr) { return; }
+
+        DrawModel(*model, [this](raylib::Matrix& matrix){
+            auto& transform = Object().Transform();
+            return matrix.Translate(transform.position).RotateY(transform.heading);
+        });
+    }
+};
+
 int main() {
     const int windowWidth = 1000;
     const int windowHeight = 700;
@@ -35,9 +51,14 @@ int main() {
     cs381::SkyBox sky("textures/skybox.png");
     raylib::Camera3D camera(raylib::Vector3{0.0f, 120.0f, -500.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
 
-    raylib::Model grass = raylib::Mesh::Plane(1000, 1000, 1, 1).LoadModelFrom();
-    raylib::Texture grassTexture = raylib::Texture("../assets/textures/grass.png");
-    grass.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grassTexture;
+    raylib::Model fireTruck("../assets/Kenny Car Kit/firetruck.glb");
+    fireTruck.transform = raylib::Matrix::Identity().Scale(20).RotateY(raylib::Degree(270));
+
+    std::vector<cs381::Entity> entities;
+
+    cs381::Entity& fireTruckEntity = entities.emplace_back();
+    fireTruckEntity.AddComponent<MeshRenderComponent>(&fireTruck);
+    fireTruckEntity.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{0, 0, 0};
 
     while(!window.ShouldClose()) {
         window.BeginDrawing();
@@ -46,8 +67,11 @@ int main() {
             {
                 window.ClearBackground(raylib::Color::White());
                 sky.Draw();
-                grass.Draw({});
 
+                auto dt = window.GetFrameTime();
+                for(auto& e : entities) {
+                    e.Tick(dt);
+                }
             }
             camera.EndMode();
         }
