@@ -75,9 +75,11 @@ struct MovementComponent: cs381::Component {
     bool addHeight = false;
     bool addScore = false;
     FlappyCounterState* flappyCounterState;
+    Sound flappySound;
+    bool playSound = false;
 
-    MovementComponent(cs381::Entity& e, FlappyCounterState* state)
-        : cs381::Component(e), flappyCounterState(state) {}
+    MovementComponent(cs381::Entity& e, FlappyCounterState* state, Sound sound)
+        : cs381::Component(e), flappyCounterState(state), flappySound(sound) {}
 
     void Tick(float dt) override {
         velocity = raylib::Vector3{ cos(radians) * speed, 0, -sin(radians) * speed };
@@ -92,7 +94,9 @@ struct MovementComponent: cs381::Component {
         if (transform.position.x > 0 && !addScore) {
             flappyCounterState->score = flappyCounterState->score + 0.5f;
             addScore = true;
-            std::cout << "Score: " << flappyCounterState->score << std::endl;
+            if (playSound) {
+                PlaySound(flappySound);
+            }
         }
     }
     
@@ -202,6 +206,9 @@ int main() {
 
     FlappyCounterState flappyCounterState = InitFlappyCounter();
 
+    raylib::AudioDevice audioDevice;
+    Sound flappySound = LoadSound("../assets/audio/flappy-sound.mp3");
+
     raylib::Model fireTruck("../assets/Kenny Car Kit/firetruck.glb");
     raylib::Model police("../assets/Kenny Car Kit/police.glb");
     fireTruck.transform = raylib::Matrix::Identity().Scale(20).RotateY(raylib::Degree(270));
@@ -211,15 +218,16 @@ int main() {
 
     cs381::Entity& topCar = entities.emplace_back();
     topCar.AddComponent<MeshRenderComponent>(&police);
-    topCar.AddComponent<MovementComponent>(&flappyCounterState);
+    topCar.AddComponent<MovementComponent>(&flappyCounterState, flappySound);
     topCar.AddComponent<GameStateComponent>();
     topCar.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-250, 80, 0};
 
     cs381::Entity& bottomCar = entities.emplace_back();
     bottomCar.AddComponent<MeshRenderComponent>(&police);
-    bottomCar.AddComponent<MovementComponent>(&flappyCounterState);
+    bottomCar.AddComponent<MovementComponent>(&flappyCounterState, flappySound);
     bottomCar.AddComponent<GameStateComponent>();
     bottomCar.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-250, -80, 0};
+    bottomCar.GetComponent<MovementComponent>()->get().playSound = true;
 
     cs381::Entity& fireTruckEntity = entities.emplace_back();
     fireTruckEntity.AddComponent<MeshRenderComponent>(&fireTruck);
@@ -233,6 +241,8 @@ int main() {
     flappyCounterState.showStartScreen = true;
 
     while(!window.ShouldClose()) {
+        SetSoundVolume(flappySound, 0.5f);
+
         if (!started && raylib::Keyboard::IsKeyDown(KEY_SPACE)) {
             entities[0].GetComponent<MovementComponent>()->get().Start();
             entities[1].GetComponent<MovementComponent>()->get().Start();
@@ -284,6 +294,9 @@ int main() {
         }
         window.EndDrawing();
     }
+
+    UnloadSound(flappySound);
+    audioDevice.Close();
 
     return 0;
 }
