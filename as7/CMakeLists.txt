@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(raylib-cpp)
 include(includeable.cmake)
 
-add_executable(as7 src/as7.cpp src/CO.hpp assets/skybox.cpp)
-target_link_libraries(as7 PUBLIC raylib raylib_cpp raylib::buffered)
+add_executable(as7 src/as7.cpp src/CO.hpp src/implementations.cpp assets/skybox.cpp)
+target_link_libraries(as7 PUBLIC raylib raylib_cpp raygui raylib::buffered)
 
 make_includeable(assets/shaders/cubemap.fs generated/cubemap.fs)
 make_includeable(assets/shaders/cubemap.vs generated/cubemap.vs)

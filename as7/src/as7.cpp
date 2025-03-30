@@ -4,6 +4,7 @@
 #include "../assets/skybox.hpp"
 #include "CO.hpp"
 #include <iostream>
+#include "FlappyGui.h"
 
 template <typename T>
 concept Transformer = requires(T t, raylib::Matrix m) {
@@ -72,9 +73,11 @@ struct MovementComponent: cs381::Component {
     float speed = 0.0f;
     int heightChange = 0;
     bool addHeight = false;
+    bool addScore = false;
+    FlappyCounterState* flappyCounterState;
 
-    MovementComponent(cs381::Entity& e)
-        : cs381::Component(e) {}
+    MovementComponent(cs381::Entity& e, FlappyCounterState* state)
+        : cs381::Component(e), flappyCounterState(state) {}
 
     void Tick(float dt) override {
         velocity = raylib::Vector3{ cos(radians) * speed, 0, -sin(radians) * speed };
@@ -84,6 +87,12 @@ struct MovementComponent: cs381::Component {
         if (transform.position.x > 250) {
             Reset();
             RandomizeHeight();
+        }
+
+        if (transform.position.x > 0 && !addScore) {
+            flappyCounterState->score = flappyCounterState->score + 0.5f;
+            addScore = true;
+            std::cout << "Score: " << flappyCounterState->score << std::endl;
         }
     }
     
@@ -98,6 +107,7 @@ struct MovementComponent: cs381::Component {
     void Reset() {
         auto& transform = Object().Transform();
         transform.position.x = -250;
+        addScore = false;
     }
     
     void RandomizeHeight() {
@@ -190,6 +200,8 @@ int main() {
     cs381::SkyBox sky("textures/skybox.png");
     raylib::Camera3D camera(raylib::Vector3{0.0f, 120.0f, -500.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
 
+    FlappyCounterState flappyCounterState = InitFlappyCounter();
+
     raylib::Model fireTruck("../assets/Kenny Car Kit/firetruck.glb");
     raylib::Model police("../assets/Kenny Car Kit/police.glb");
     fireTruck.transform = raylib::Matrix::Identity().Scale(20).RotateY(raylib::Degree(270));
@@ -199,13 +211,13 @@ int main() {
 
     cs381::Entity& topCar = entities.emplace_back();
     topCar.AddComponent<MeshRenderComponent>(&police);
-    topCar.AddComponent<MovementComponent>();
+    topCar.AddComponent<MovementComponent>(&flappyCounterState);
     topCar.AddComponent<GameStateComponent>();
     topCar.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-250, 80, 0};
 
     cs381::Entity& bottomCar = entities.emplace_back();
     bottomCar.AddComponent<MeshRenderComponent>(&police);
-    bottomCar.AddComponent<MovementComponent>();
+    bottomCar.AddComponent<MovementComponent>(&flappyCounterState);
     bottomCar.AddComponent<GameStateComponent>();
     bottomCar.GetComponent<cs381::TransformComponent>()->get().position = raylib::Vector3{-250, -80, 0};
 
@@ -218,6 +230,7 @@ int main() {
 
     bool spacePressed = false;
     bool started = false;
+    flappyCounterState.showStartScreen = true;
 
     while(!window.ShouldClose()) {
         if (!started && raylib::Keyboard::IsKeyDown(KEY_SPACE)) {
@@ -225,7 +238,8 @@ int main() {
             entities[1].GetComponent<MovementComponent>()->get().Start();
             entities[2].GetComponent<GravityComponent>()->get().Start();
             started = true;
-            std::cout << "Game Started!" << std::endl;
+            flappyCounterState.showStartScreen = false;
+            flappyCounterState.score = 0.0f;
         }
         if (raylib::Keyboard::IsKeyDown(KEY_SPACE) && !spacePressed && !entities[2].GetComponent<CollisionComponent>()->get().collisionDetected) {
             entities[2].GetComponent<GravityComponent>()->get().Jump();
@@ -240,6 +254,7 @@ int main() {
             entities[0].GetComponent<GameStateComponent>()->get().StopCars();
             entities[1].GetComponent<GameStateComponent>()->get().StopCars();
             entities[2].GetComponent<GameStateComponent>()->get().StopTruck();
+            flappyCounterState.showGameOverScreen = true;
         }
 
         if (entities[2].GetComponent<CollisionComponent>()->get().collisionDetected && raylib::Keyboard::IsKeyDown(KEY_R)) {
@@ -249,6 +264,7 @@ int main() {
 
             entities[2].GetComponent<CollisionComponent>()->get().collisionDetected = false;
             started = false;
+            flappyCounterState.showGameOverScreen = false;
         }
 
         window.BeginDrawing();
@@ -264,6 +280,7 @@ int main() {
                 }
             }
             camera.EndMode();
+            GuiFlappyCounter(&flappyCounterState);
         }
         window.EndDrawing();
     }
