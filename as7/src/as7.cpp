@@ -240,10 +240,13 @@ int main() {
     bool started = false;
     flappyCounterState.showStartScreen = true;
 
-    while(!window.ShouldClose()) {
-        SetSoundVolume(flappySound, 0.5f);
+    raylib::BufferedInput bufferedInput;
 
-        if (!started && raylib::Keyboard::IsKeyDown(KEY_SPACE)) {
+    bufferedInput["Jump"] = raylib::Action::key(KEY_SPACE).move();
+    bufferedInput["Reset"] = raylib::Action::key(KEY_R).move();
+
+    bufferedInput["Jump"].AddPressedCallback([&flappyCounterState, &started, &spacePressed, &entities]{
+        if (!started) {
             entities[0].GetComponent<MovementComponent>()->get().Start();
             entities[1].GetComponent<MovementComponent>()->get().Start();
             entities[2].GetComponent<GravityComponent>()->get().Start();
@@ -251,10 +254,30 @@ int main() {
             flappyCounterState.showStartScreen = false;
             flappyCounterState.score = 0.0f;
         }
-        if (raylib::Keyboard::IsKeyDown(KEY_SPACE) && !spacePressed && !entities[2].GetComponent<CollisionComponent>()->get().collisionDetected) {
+        if (!spacePressed && !entities[2].GetComponent<CollisionComponent>()->get().collisionDetected) {
             entities[2].GetComponent<GravityComponent>()->get().Jump();
         }
-        spacePressed = raylib::Keyboard::IsKeyDown(KEY_SPACE);
+        spacePressed = true;
+    }).move();
+    bufferedInput["Jump"].AddReleasedCallback([&spacePressed]{
+        spacePressed = false;
+    });
+    bufferedInput["Reset"].AddPressedCallback([&entities, &started, &flappyCounterState]{
+        if (entities[2].GetComponent<CollisionComponent>()->get().collisionDetected) {
+            entities[0].GetComponent<GameStateComponent>()->get().ResetTopCar();
+            entities[1].GetComponent<GameStateComponent>()->get().ResetBottomCar();
+            entities[2].GetComponent<GameStateComponent>()->get().ResetTruck();
+
+            entities[2].GetComponent<CollisionComponent>()->get().collisionDetected = false;
+            started = false;
+            flappyCounterState.showGameOverScreen = false;
+            flappyCounterState.showStartScreen = true;
+        }
+    });
+
+    while(!window.ShouldClose()) {
+        SetSoundVolume(flappySound, 0.5f);
+        bufferedInput.PollEvents();
 
         int heightChange = rand() % 100;
         entities[0].GetComponent<MovementComponent>()->get().heightChange = heightChange;
@@ -265,16 +288,6 @@ int main() {
             entities[1].GetComponent<GameStateComponent>()->get().StopCars();
             entities[2].GetComponent<GameStateComponent>()->get().StopTruck();
             flappyCounterState.showGameOverScreen = true;
-        }
-
-        if (entities[2].GetComponent<CollisionComponent>()->get().collisionDetected && raylib::Keyboard::IsKeyDown(KEY_R)) {
-            entities[0].GetComponent<GameStateComponent>()->get().ResetTopCar();
-            entities[1].GetComponent<GameStateComponent>()->get().ResetBottomCar();
-            entities[2].GetComponent<GameStateComponent>()->get().ResetTruck();
-
-            entities[2].GetComponent<CollisionComponent>()->get().collisionDetected = false;
-            started = false;
-            flappyCounterState.showGameOverScreen = false;
         }
 
         window.BeginDrawing();
