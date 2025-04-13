@@ -34,6 +34,7 @@ struct RenderComponent {
 struct TransformComponent {
     raylib::Vector3 position = {0.0f, 0.0f, 0.0f};
     raylib::Degree heading = 0;
+    raylib::Quaternion rotation = raylib::Quaternion::Identity();
 };
 
 struct PhysicsProperties {
@@ -61,6 +62,11 @@ struct InputStateComponent {
     bool slowDown = false;
     bool left = false;
     bool right = false;
+
+    bool roll = false;
+    bool notRoll = false;
+    bool pitch = false;
+    bool notPitch = false;
 };
 
 void RenderEntities(cs381::Scene<cs381::ComponentStorage>& scene, int selectedEntity) {
@@ -75,15 +81,33 @@ void RenderEntities(cs381::Scene<cs381::ComponentStorage>& scene, int selectedEn
         auto& renderComponent = scene.GetComponent<RenderComponent>(e);
         auto& transformComponent = scene.GetComponent<TransformComponent>(e);
 
-        if (selectedEntity == e) {
-            DrawBoundedModel(*renderComponent.model, [&transformComponent](const raylib::Transform& m) -> raylib::Transform {
-                return m.Translate(transformComponent.position).Scale(30).RotateY(transformComponent.heading + raylib::Degree(90));
-            });
-        } 
-        else {
-            DrawModel(*renderComponent.model, [&transformComponent](const raylib::Transform& m) -> raylib::Transform {
-                return m.Translate(transformComponent.position).Scale(30).RotateY(transformComponent.heading + raylib::Degree(90));
-            });
+        if (scene.HasComponent<Physics2DComponent>(e)) {
+            if (selectedEntity == e) {
+                DrawBoundedModel(*renderComponent.model, [&transformComponent](const raylib::Transform& m) -> raylib::Transform {
+                    return m.Translate(transformComponent.position).Scale(30).RotateY(transformComponent.heading + raylib::Degree(90));
+                });
+            } 
+            else {
+                DrawModel(*renderComponent.model, [&transformComponent](const raylib::Transform& m) -> raylib::Transform {
+                    return m.Translate(transformComponent.position).Scale(30).RotateY(transformComponent.heading + raylib::Degree(90));
+                });
+            }
+        }
+        else if (scene.HasComponent<Physics3DComponent>(e)) {
+            raylib::Vector3 rotationAxis = {0.0f, 1.0f, 0.0f};
+            float rotationAngle = 0.0f;
+            QuaternionToAxisAngle(transformComponent.rotation, &rotationAxis, &rotationAngle);
+
+            if (selectedEntity == e) {
+                DrawBoundedModel(*renderComponent.model, [&transformComponent, rotationAxis, rotationAngle](const raylib::Transform& m) -> raylib::Transform {
+                    return m.Translate(transformComponent.position).Scale(30).Rotate(rotationAxis, rotationAngle);
+                });
+            } 
+            else {
+                DrawModel(*renderComponent.model, [&transformComponent, rotationAxis, rotationAngle](const raylib::Transform& m) -> raylib::Transform {
+                    return m.Translate(transformComponent.position).Scale(30).Rotate(rotationAxis, rotationAngle);
+                });
+            }
         }
     }
 }
@@ -112,9 +136,6 @@ void Update2DPhysics(cs381::Scene<cs381::ComponentStorage>& scene, float dt) {
 
             transformComponent.position = transformComponent.position + kinematicsComponent.velocity * dt;
         }
-        else if (scene.HasComponent<Physics3DComponent>(e)) {
-
-        }
     }
 }
 
@@ -129,7 +150,19 @@ void Update3DPhysics(cs381::Scene<cs381::ComponentStorage>& scene, float dt) {
         transformComponent.position = transformComponent.position + kinematicsComponent.velocity * dt;
 
         if (scene.HasComponent<Physics3DComponent>(e)) {
-            kinematicsComponent.velocity = raylib::Vector3{kinematicsComponent.speed * -cos(transformComponent.heading), kinematicsComponent.speed * sin(transformComponent.heading), 0.0f};
+            auto& physicsComponent = scene.GetComponent<Physics3DComponent>(e);
+
+            if (!scene.HasComponent<PhysicsProperties>(e)) {
+                continue;
+            }
+            auto& physicsProperties = scene.GetComponent<PhysicsProperties>(e);
+
+            kinematicsComponent.speed = std::lerp(kinematicsComponent.speed, kinematicsComponent.targetSpeed, dt * physicsProperties.acceleration);
+
+            transformComponent.rotation = transformComponent.rotation.Slerp(physicsComponent.targetRotation, dt);
+            kinematicsComponent.velocity = raylib::Vector3::Left().RotateByQuaternion(transformComponent.rotation) * kinematicsComponent.speed;
+
+            transformComponent.position = transformComponent.position + kinematicsComponent.velocity * dt;
         }
     }
 
@@ -211,7 +244,96 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
             });
         }
         else if (scene.HasComponent<Physics3DComponent>(e)) {
+            if (!scene.HasComponent<PhysicsProperties>(e)) {
+                continue;
+            }
+            auto& physicsProperties = scene.GetComponent<PhysicsProperties>(e);
+            auto& physicsComponent = scene.GetComponent<Physics3DComponent>(e);
 
+            bufferedInput["Forward"].AddPressedCallback([&physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.forward) {
+                    kinematicsComponent.targetSpeed = physicsProperties.speedIncrement + kinematicsComponent.targetSpeed;
+                    inputStateComponent.forward = true;
+                }
+            });
+            bufferedInput["SlowDown"].AddPressedCallback([&physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.slowDown) {
+                    kinematicsComponent.targetSpeed = kinematicsComponent.targetSpeed - physicsProperties.speedIncrement;
+                    inputStateComponent.slowDown = true;
+                }
+            });
+            bufferedInput["Stop"].AddPressedCallback([&kinematicsComponent, &selectedEntity, e]{
+                if (selectedEntity == e) {
+                    kinematicsComponent.targetSpeed = 0.0f;
+                }
+            });
+            bufferedInput["Left"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.left) {
+                    raylib::Quaternion rotation = QuaternionFromAxisAngle({0, 1, 0}, physicsProperties.turningRate * DEG2RAD);
+                    physicsComponent.targetRotation = QuaternionMultiply(physicsComponent.targetRotation, rotation);
+                    inputStateComponent.left = true;
+                }
+            });
+            bufferedInput["Right"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.right) {
+                    raylib::Quaternion rotation = QuaternionFromAxisAngle({0, 1, 0}, -physicsProperties.turningRate * DEG2RAD);
+                    physicsComponent.targetRotation = QuaternionMultiply(physicsComponent.targetRotation, rotation);
+                    inputStateComponent.right = true;
+                }
+            });
+            bufferedInput["IncreasePitch"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.pitch) {
+                    raylib::Quaternion rotation = QuaternionFromAxisAngle({1, 0, 0}, physicsProperties.turningRate * DEG2RAD);
+                    physicsComponent.targetRotation = QuaternionMultiply(physicsComponent.targetRotation, rotation);
+                    inputStateComponent.pitch = true;
+                }
+            });
+            bufferedInput["DecreasePitch"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.notPitch) {
+                    raylib::Quaternion rotation = QuaternionFromAxisAngle({1, 0, 0}, -physicsProperties.turningRate * DEG2RAD);
+                    physicsComponent.targetRotation = QuaternionMultiply(physicsComponent.targetRotation, rotation);
+                    inputStateComponent.notPitch = true;
+                }
+            });
+            bufferedInput["IncreaseRoll"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.roll) {
+                    raylib::Quaternion rotation = QuaternionFromAxisAngle({0, 0, 1}, physicsProperties.turningRate * DEG2RAD);
+                    physicsComponent.targetRotation = QuaternionMultiply(physicsComponent.targetRotation, rotation);
+                    inputStateComponent.roll = true;
+                }
+            });
+            bufferedInput["DecreaseRoll"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.notRoll) {
+                    raylib::Quaternion rotation = QuaternionFromAxisAngle({0, 0, 1}, -physicsProperties.turningRate * DEG2RAD);
+                    physicsComponent.targetRotation = QuaternionMultiply(physicsComponent.targetRotation, rotation);
+                    inputStateComponent.notRoll = true;
+                }
+            });
+
+            bufferedInput["Forward"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.forward = false;
+            });
+            bufferedInput["SlowDown"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.slowDown = false;
+            });
+            bufferedInput["Left"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.left = false;
+            });
+            bufferedInput["Right"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.right = false;
+            });
+            bufferedInput["IncreasePitch"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.pitch = false;
+            });
+            bufferedInput["DecreasePitch"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.notPitch = false;
+            });
+            bufferedInput["IncreaseRoll"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.roll = false;
+            });
+            bufferedInput["DecreaseRoll"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.notRoll = false;
+            });
         }
     }
 }
@@ -246,6 +368,10 @@ int main() {
     bufferedInput["Stop"] = raylib::Action::key(KEY_SPACE).move();
     bufferedInput["Left"] = raylib::Action::key(KEY_A).move();
     bufferedInput["Right"] = raylib::Action::key(KEY_D).move();
+    bufferedInput["IncreasePitch"] = raylib::Action::key(KEY_R).move();
+    bufferedInput["DecreasePitch"] = raylib::Action::key(KEY_F).move();
+    bufferedInput["IncreaseRoll"] = raylib::Action::key(KEY_Q).move();
+    bufferedInput["DecreaseRoll"] = raylib::Action::key(KEY_E).move();
 
     cs381::Scene<cs381::ComponentStorage> scene;
 
@@ -253,6 +379,12 @@ int main() {
     scene.AddComponent<RenderComponent>(rocketEntity);
     scene.GetComponent<RenderComponent>(rocketEntity).model = &rocket;
     scene.AddComponent<TransformComponent>(rocketEntity);
+    scene.AddComponent<PhysicsProperties>(rocketEntity);
+    scene.GetComponent<PhysicsProperties>(rocketEntity).speedIncrement = 20.0f;
+    scene.GetComponent<PhysicsProperties>(rocketEntity).acceleration = 1.0f;
+    scene.GetComponent<PhysicsProperties>(rocketEntity).turningRate = 15.0f;
+    scene.AddComponent<KinematicsComponent>(rocketEntity);
+    scene.AddComponent<Physics3DComponent>(rocketEntity);
     scene.AddComponent<InputStateComponent>(rocketEntity);
 
     cs381::Entity truckEntity = scene.CreateEntity();
