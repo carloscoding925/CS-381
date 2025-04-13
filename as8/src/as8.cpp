@@ -56,6 +56,13 @@ struct Physics3DComponent {
     raylib::Quaternion targetRotation = {0.0f, 0.0f, 0.0f, 1.0f};
 };
 
+struct InputStateComponent {
+    bool forward = false;
+    bool slowDown = false;
+    bool left = false;
+    bool right = false;
+};
+
 void RenderEntities(cs381::Scene<cs381::ComponentStorage>& scene, int selectedEntity) {
     for (cs381::Entity e = 0; e < scene.entityMasks.size(); e++) {
         if (!scene.HasComponent<RenderComponent>(e)) {
@@ -130,10 +137,6 @@ void Update3DPhysics(cs381::Scene<cs381::ComponentStorage>& scene, float dt) {
 
 void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedInput& bufferedInput, int& selectedEntity) {
     bool tabPressed = false;
-    bool forwardPressed = false;
-    bool slowDownPressed = false;
-    bool leftPressed = false;
-    bool rightPressed = false;
 
     bufferedInput["Switch"].AddPressedCallback([&selectedEntity, &tabPressed]{
         if (!tabPressed) {
@@ -155,6 +158,7 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
 
         auto& transformComponent = scene.GetComponent<TransformComponent>(e);
         auto& kinematicsComponent = scene.GetComponent<KinematicsComponent>(e);
+        auto& inputStateComponent = scene.GetComponent<InputStateComponent>(e);
 
         if (scene.HasComponent<Physics2DComponent>(e)) {
             if (!scene.HasComponent<PhysicsProperties>(e)) {
@@ -163,16 +167,16 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
             auto& physicsProperties = scene.GetComponent<PhysicsProperties>(e);
             auto& physicsComponent = scene.GetComponent<Physics2DComponent>(e);
 
-            bufferedInput["Forward"].AddPressedCallback([&physicsProperties, &kinematicsComponent, &selectedEntity, e, &forwardPressed]{
-                if (selectedEntity == e && !forwardPressed) {
+            bufferedInput["Forward"].AddPressedCallback([&physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.forward) {
                     kinematicsComponent.targetSpeed = physicsProperties.speedIncrement + kinematicsComponent.targetSpeed;
-                    forwardPressed = true;
+                    inputStateComponent.forward = true;
                 }
             });
-            bufferedInput["SlowDown"].AddPressedCallback([&physicsProperties, &kinematicsComponent, &selectedEntity, e, &slowDownPressed]{
-                if (selectedEntity == e && !slowDownPressed) {
+            bufferedInput["SlowDown"].AddPressedCallback([&physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.slowDown) {
                     kinematicsComponent.targetSpeed = kinematicsComponent.targetSpeed - physicsProperties.speedIncrement;
-                    slowDownPressed = true;
+                    inputStateComponent.slowDown = true;
                 }
             });
             bufferedInput["Stop"].AddPressedCallback([&kinematicsComponent, &selectedEntity, e]{
@@ -180,30 +184,30 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
                     kinematicsComponent.targetSpeed = 0.0f;
                 }
             });
-            bufferedInput["Left"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &leftPressed]{
-                if (selectedEntity == e && !leftPressed) {
+            bufferedInput["Left"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.left) {
                     physicsComponent.targetHeading = physicsComponent.targetHeading + raylib::Degree(physicsProperties.turningRate);
-                    leftPressed = true;
+                    inputStateComponent.left = true;
                 }
             });
-            bufferedInput["Right"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &rightPressed]{
-                if (selectedEntity == e && !rightPressed) {
+            bufferedInput["Right"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &inputStateComponent]{
+                if (selectedEntity == e && !inputStateComponent.right) {
                     physicsComponent.targetHeading = physicsComponent.targetHeading - raylib::Degree(physicsProperties.turningRate);
-                    rightPressed = true;
+                    inputStateComponent.right = true;
                 }
             });
 
-            bufferedInput["Forward"].AddReleasedCallback([&forwardPressed]{
-                forwardPressed = false;
+            bufferedInput["Forward"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.forward = false;
             });
-            bufferedInput["SlowDown"].AddReleasedCallback([&slowDownPressed]{
-                slowDownPressed = false;
+            bufferedInput["SlowDown"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.slowDown = false;
             });
-            bufferedInput["Left"].AddReleasedCallback([&leftPressed]{
-                leftPressed = false;
+            bufferedInput["Left"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.left = false;
             });
-            bufferedInput["Right"].AddReleasedCallback([&rightPressed]{
-                rightPressed = false;
+            bufferedInput["Right"].AddReleasedCallback([&inputStateComponent]{
+                inputStateComponent.right = false;
             });
         }
         else if (scene.HasComponent<Physics3DComponent>(e)) {
@@ -249,6 +253,7 @@ int main() {
     scene.AddComponent<RenderComponent>(rocketEntity);
     scene.GetComponent<RenderComponent>(rocketEntity).model = &rocket;
     scene.AddComponent<TransformComponent>(rocketEntity);
+    scene.AddComponent<InputStateComponent>(rocketEntity);
 
     cs381::Entity truckEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(truckEntity);
@@ -261,6 +266,7 @@ int main() {
     scene.GetComponent<PhysicsProperties>(truckEntity).turningRate = 25.0f;
     scene.AddComponent<KinematicsComponent>(truckEntity);
     scene.AddComponent<Physics2DComponent>(truckEntity);
+    scene.AddComponent<InputStateComponent>(truckEntity);
 
     cs381::Entity ambulanceEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(ambulanceEntity);
@@ -273,6 +279,7 @@ int main() {
     scene.GetComponent<PhysicsProperties>(ambulanceEntity).turningRate = 15.0f;
     scene.AddComponent<KinematicsComponent>(ambulanceEntity);
     scene.AddComponent<Physics2DComponent>(ambulanceEntity);
+    scene.AddComponent<InputStateComponent>(ambulanceEntity);
 
     cs381::Entity garbageTruckEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(garbageTruckEntity);
@@ -285,6 +292,7 @@ int main() {
     scene.GetComponent<PhysicsProperties>(garbageTruckEntity).turningRate = 10.0f;
     scene.AddComponent<KinematicsComponent>(garbageTruckEntity);
     scene.AddComponent<Physics2DComponent>(garbageTruckEntity);
+    scene.AddComponent<InputStateComponent>(garbageTruckEntity);
 
     cs381::Entity sportsSedanEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(sportsSedanEntity);
@@ -297,6 +305,7 @@ int main() {
     scene.GetComponent<PhysicsProperties>(sportsSedanEntity).turningRate = 30.0f;
     scene.AddComponent<KinematicsComponent>(sportsSedanEntity);
     scene.AddComponent<Physics2DComponent>(sportsSedanEntity);
+    scene.AddComponent<InputStateComponent>(sportsSedanEntity);
 
     cs381::Entity fireTruckEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(fireTruckEntity);
@@ -309,6 +318,7 @@ int main() {
     scene.GetComponent<PhysicsProperties>(fireTruckEntity).turningRate = 30.0f;
     scene.AddComponent<KinematicsComponent>(fireTruckEntity);
     scene.AddComponent<Physics2DComponent>(fireTruckEntity);
+    scene.AddComponent<InputStateComponent>(fireTruckEntity);
 
     while(!window.ShouldClose()) {
         bufferedInput.PollEvents();
