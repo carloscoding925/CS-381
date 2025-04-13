@@ -37,7 +37,7 @@ struct TransformComponent {
 };
 
 struct PhysicsProperties {
-    float maxSpeed = 0.0f;
+    float speedIncrement = 0.0f;
     float acceleration = 0.0f;
     float turningRate = 0.0f;  
 };
@@ -70,12 +70,12 @@ void RenderEntities(cs381::Scene<cs381::ComponentStorage>& scene, int selectedEn
 
         if (selectedEntity == e) {
             DrawBoundedModel(*renderComponent.model, [&transformComponent](const raylib::Transform& m) -> raylib::Transform {
-                return m.Translate(transformComponent.position).Scale(30).RotateY(transformComponent.heading);
+                return m.Translate(transformComponent.position).Scale(30).RotateY(transformComponent.heading + raylib::Degree(90));
             });
         } 
         else {
             DrawModel(*renderComponent.model, [&transformComponent](const raylib::Transform& m) -> raylib::Transform {
-                return m.Translate(transformComponent.position).Scale(30).RotateY(transformComponent.heading);
+                return m.Translate(transformComponent.position).Scale(30).RotateY(transformComponent.heading + raylib::Degree(90));
             });
         }
     }
@@ -89,10 +89,24 @@ void Update2DPhysics(cs381::Scene<cs381::ComponentStorage>& scene, float dt) {
         auto& transformComponent = scene.GetComponent<TransformComponent>(e);
         auto& kinematicsComponent = scene.GetComponent<KinematicsComponent>(e);
 
-        transformComponent.position = transformComponent.position + kinematicsComponent.velocity * dt;
-
         if (scene.HasComponent<Physics2DComponent>(e)) {
-            kinematicsComponent.velocity = raylib::Vector3{kinematicsComponent.speed * cos(transformComponent.heading), 0.0f, kinematicsComponent.speed * -sin(transformComponent.heading)};
+            auto& physicsComponent = scene.GetComponent<Physics2DComponent>(e);
+
+            if (!scene.HasComponent<PhysicsProperties>(e)) {
+                continue;
+            }
+            auto& physicsProperties = scene.GetComponent<PhysicsProperties>(e);
+
+            transformComponent.heading = std::lerp(transformComponent.heading, physicsComponent.targetHeading, dt);
+            float radians = DEG2RAD * transformComponent.heading;
+
+            kinematicsComponent.speed = std::lerp(kinematicsComponent.speed, kinematicsComponent.targetSpeed, dt * physicsProperties.acceleration);
+            kinematicsComponent.velocity = raylib::Vector3{ cos(radians) * kinematicsComponent.speed, 0.0f, -sin(radians) * kinematicsComponent.speed };
+
+            transformComponent.position = transformComponent.position + kinematicsComponent.velocity * dt;
+        }
+        else if (scene.HasComponent<Physics3DComponent>(e)) {
+
         }
     }
 }
@@ -112,6 +126,90 @@ void Update3DPhysics(cs381::Scene<cs381::ComponentStorage>& scene, float dt) {
         }
     }
 
+}
+
+void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedInput& bufferedInput, int& selectedEntity) {
+    bool tabPressed = false;
+    bool forwardPressed = false;
+    bool slowDownPressed = false;
+    bool leftPressed = false;
+    bool rightPressed = false;
+
+    bufferedInput["Switch"].AddPressedCallback([&selectedEntity, &tabPressed]{
+        if (!tabPressed) {
+            selectedEntity = (selectedEntity + 1) % 6;
+            tabPressed = true;
+        }
+    });
+    bufferedInput["Switch"].AddReleasedCallback([&tabPressed]{
+        tabPressed = false;
+    });
+
+    for (cs381::Entity e = 0; e < scene.entityMasks.size(); e++) {
+        if (!scene.HasComponent<TransformComponent>(e)) {
+            continue;
+        }
+        if (!scene.HasComponent<KinematicsComponent>(e)) {
+            continue;
+        }
+
+        auto& transformComponent = scene.GetComponent<TransformComponent>(e);
+        auto& kinematicsComponent = scene.GetComponent<KinematicsComponent>(e);
+
+        if (scene.HasComponent<Physics2DComponent>(e)) {
+            if (!scene.HasComponent<PhysicsProperties>(e)) {
+                continue;
+            }
+            auto& physicsProperties = scene.GetComponent<PhysicsProperties>(e);
+            auto& physicsComponent = scene.GetComponent<Physics2DComponent>(e);
+
+            bufferedInput["Forward"].AddPressedCallback([&physicsProperties, &kinematicsComponent, &selectedEntity, e, &forwardPressed]{
+                if (selectedEntity == e && !forwardPressed) {
+                    kinematicsComponent.targetSpeed = physicsProperties.speedIncrement + kinematicsComponent.targetSpeed;
+                    forwardPressed = true;
+                }
+            });
+            bufferedInput["SlowDown"].AddPressedCallback([&physicsProperties, &kinematicsComponent, &selectedEntity, e, &slowDownPressed]{
+                if (selectedEntity == e && !slowDownPressed) {
+                    kinematicsComponent.targetSpeed = kinematicsComponent.targetSpeed - physicsProperties.speedIncrement;
+                    slowDownPressed = true;
+                }
+            });
+            bufferedInput["Stop"].AddPressedCallback([&kinematicsComponent, &selectedEntity, e]{
+                if (selectedEntity == e) {
+                    kinematicsComponent.targetSpeed = 0.0f;
+                }
+            });
+            bufferedInput["Left"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &leftPressed]{
+                if (selectedEntity == e && !leftPressed) {
+                    physicsComponent.targetHeading = physicsComponent.targetHeading + raylib::Degree(physicsProperties.turningRate);
+                    leftPressed = true;
+                }
+            });
+            bufferedInput["Right"].AddPressedCallback([&physicsComponent, &physicsProperties, &kinematicsComponent, &selectedEntity, e, &rightPressed]{
+                if (selectedEntity == e && !rightPressed) {
+                    physicsComponent.targetHeading = physicsComponent.targetHeading - raylib::Degree(physicsProperties.turningRate);
+                    rightPressed = true;
+                }
+            });
+
+            bufferedInput["Forward"].AddReleasedCallback([&forwardPressed]{
+                forwardPressed = false;
+            });
+            bufferedInput["SlowDown"].AddReleasedCallback([&slowDownPressed]{
+                slowDownPressed = false;
+            });
+            bufferedInput["Left"].AddReleasedCallback([&leftPressed]{
+                leftPressed = false;
+            });
+            bufferedInput["Right"].AddReleasedCallback([&rightPressed]{
+                rightPressed = false;
+            });
+        }
+        else if (scene.HasComponent<Physics3DComponent>(e)) {
+
+        }
+    }
 }
 
 int main() {
@@ -139,10 +237,11 @@ int main() {
     raylib::BufferedInput bufferedInput;
 
     bufferedInput["Switch"] = raylib::Action::key(KEY_TAB).move();
-
-    bufferedInput["Switch"].AddPressedCallback([&selectedEntity]{
-        selectedEntity = (selectedEntity + 1) % 6;
-    });
+    bufferedInput["Forward"] = raylib::Action::key(KEY_W).move();
+    bufferedInput["SlowDown"] = raylib::Action::key(KEY_S).move();
+    bufferedInput["Stop"] = raylib::Action::key(KEY_SPACE).move();
+    bufferedInput["Left"] = raylib::Action::key(KEY_A).move();
+    bufferedInput["Right"] = raylib::Action::key(KEY_D).move();
 
     cs381::Scene<cs381::ComponentStorage> scene;
 
@@ -156,60 +255,60 @@ int main() {
     scene.GetComponent<RenderComponent>(truckEntity).model = &truck;
     scene.AddComponent<TransformComponent>(truckEntity);
     scene.GetComponent<TransformComponent>(truckEntity).position = raylib::Vector3{100.0f, 0.0f, 0.0f};
-    scene.GetComponent<TransformComponent>(truckEntity).heading = 90;
     scene.AddComponent<PhysicsProperties>(truckEntity);
-    scene.GetComponent<PhysicsProperties>(truckEntity).maxSpeed = 10.0f;
-    scene.GetComponent<PhysicsProperties>(truckEntity).acceleration = 5.0f;
-    scene.GetComponent<PhysicsProperties>(truckEntity).turningRate = 5.0f;
+    scene.GetComponent<PhysicsProperties>(truckEntity).speedIncrement = 10.0f;
+    scene.GetComponent<PhysicsProperties>(truckEntity).acceleration = 1.0f;
+    scene.GetComponent<PhysicsProperties>(truckEntity).turningRate = 25.0f;
     scene.AddComponent<KinematicsComponent>(truckEntity);
+    scene.AddComponent<Physics2DComponent>(truckEntity);
 
     cs381::Entity ambulanceEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(ambulanceEntity);
     scene.GetComponent<RenderComponent>(ambulanceEntity).model = &ambulance;
     scene.AddComponent<TransformComponent>(ambulanceEntity);
     scene.GetComponent<TransformComponent>(ambulanceEntity).position = raylib::Vector3{-100.0f, 0.0f, 0.0f};
-    scene.GetComponent<TransformComponent>(ambulanceEntity).heading = 90;
     scene.AddComponent<PhysicsProperties>(ambulanceEntity);
-    scene.GetComponent<PhysicsProperties>(ambulanceEntity).maxSpeed = 15.0f;
-    scene.GetComponent<PhysicsProperties>(ambulanceEntity).acceleration = 7.0f;
-    scene.GetComponent<PhysicsProperties>(ambulanceEntity).turningRate = 10.0f;
+    scene.GetComponent<PhysicsProperties>(ambulanceEntity).speedIncrement = 15.0f;
+    scene.GetComponent<PhysicsProperties>(ambulanceEntity).acceleration = 2.0f;
+    scene.GetComponent<PhysicsProperties>(ambulanceEntity).turningRate = 15.0f;
     scene.AddComponent<KinematicsComponent>(ambulanceEntity);
+    scene.AddComponent<Physics2DComponent>(ambulanceEntity);
 
     cs381::Entity garbageTruckEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(garbageTruckEntity);
     scene.GetComponent<RenderComponent>(garbageTruckEntity).model = &garbageTruck;
     scene.AddComponent<TransformComponent>(garbageTruckEntity);
     scene.GetComponent<TransformComponent>(garbageTruckEntity).position = raylib::Vector3{200.0f, 0.0f, 0.0f};
-    scene.GetComponent<TransformComponent>(garbageTruckEntity).heading = 90;
     scene.AddComponent<PhysicsProperties>(garbageTruckEntity);
-    scene.GetComponent<PhysicsProperties>(garbageTruckEntity).maxSpeed = 8.0f;
-    scene.GetComponent<PhysicsProperties>(garbageTruckEntity).acceleration = 4.0f;
-    scene.GetComponent<PhysicsProperties>(garbageTruckEntity).turningRate = 3.0f;
+    scene.GetComponent<PhysicsProperties>(garbageTruckEntity).speedIncrement = 5.0f;
+    scene.GetComponent<PhysicsProperties>(garbageTruckEntity).acceleration = 0.5f;
+    scene.GetComponent<PhysicsProperties>(garbageTruckEntity).turningRate = 10.0f;
     scene.AddComponent<KinematicsComponent>(garbageTruckEntity);
+    scene.AddComponent<Physics2DComponent>(garbageTruckEntity);
 
     cs381::Entity sportsSedanEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(sportsSedanEntity);
     scene.GetComponent<RenderComponent>(sportsSedanEntity).model = &sportsSedan;
     scene.AddComponent<TransformComponent>(sportsSedanEntity);
     scene.GetComponent<TransformComponent>(sportsSedanEntity).position = raylib::Vector3{-200.0f, 0.0f, 0.0f};
-    scene.GetComponent<TransformComponent>(sportsSedanEntity).heading = 90;
     scene.AddComponent<PhysicsProperties>(sportsSedanEntity);
-    scene.GetComponent<PhysicsProperties>(sportsSedanEntity).maxSpeed = 20.0f;
-    scene.GetComponent<PhysicsProperties>(sportsSedanEntity).acceleration = 10.0f;
-    scene.GetComponent<PhysicsProperties>(sportsSedanEntity).turningRate = 15.0f;
+    scene.GetComponent<PhysicsProperties>(sportsSedanEntity).speedIncrement = 25.0f;
+    scene.GetComponent<PhysicsProperties>(sportsSedanEntity).acceleration = 2.0f;
+    scene.GetComponent<PhysicsProperties>(sportsSedanEntity).turningRate = 30.0f;
     scene.AddComponent<KinematicsComponent>(sportsSedanEntity);
+    scene.AddComponent<Physics2DComponent>(sportsSedanEntity);
 
     cs381::Entity fireTruckEntity = scene.CreateEntity();
     scene.AddComponent<RenderComponent>(fireTruckEntity);
     scene.GetComponent<RenderComponent>(fireTruckEntity).model = &fireTruck;
     scene.AddComponent<TransformComponent>(fireTruckEntity);
     scene.GetComponent<TransformComponent>(fireTruckEntity).position = raylib::Vector3{300.0f, 0.0f, 0.0f};
-    scene.GetComponent<TransformComponent>(fireTruckEntity).heading = 90;
     scene.AddComponent<PhysicsProperties>(fireTruckEntity);
-    scene.GetComponent<PhysicsProperties>(fireTruckEntity).maxSpeed = 12.0f;
-    scene.GetComponent<PhysicsProperties>(fireTruckEntity).acceleration = 6.0f;
-    scene.GetComponent<PhysicsProperties>(fireTruckEntity).turningRate = 8.0f;
+    scene.GetComponent<PhysicsProperties>(fireTruckEntity).speedIncrement = 20.0f;
+    scene.GetComponent<PhysicsProperties>(fireTruckEntity).acceleration = 1.5f;
+    scene.GetComponent<PhysicsProperties>(fireTruckEntity).turningRate = 30.0f;
     scene.AddComponent<KinematicsComponent>(fireTruckEntity);
+    scene.AddComponent<Physics2DComponent>(fireTruckEntity);
 
     while(!window.ShouldClose()) {
         bufferedInput.PollEvents();
@@ -224,6 +323,8 @@ int main() {
 
                 RenderEntities(scene, selectedEntity);
                 Update2DPhysics(scene, window.GetFrameTime());
+                Update3DPhysics(scene, window.GetFrameTime());
+                InputSystem(scene, bufferedInput, selectedEntity);
             }
             camera.EndMode();
         }
