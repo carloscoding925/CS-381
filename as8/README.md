@@ -24,3 +24,14 @@ The following steps will guide you through running the code for AS8. <br />
 - In our previous guide we compiled the code for AS8, which should have produced an executable called `as8`
 - Lets run this executable! Type `./as8`
 - Congratulations! You've ran AS8.
+
+## Controls Enumeration for AS8
+- **W**: Speed up Car/Rocket by an incrementing value
+- **S**: Decrease Car/Rocket speed by an incrementing value
+- **A**: Increases entity heading/yaw
+- **D**: Decrease entity heading/yaw
+- **R**: Increase entity pitch
+- **F**: Decrease entity pitch
+- **Q**: Increase entity roll
+- **E**: Decrease entity roll
+- **SPACE**: Reset entity velocity to 0
