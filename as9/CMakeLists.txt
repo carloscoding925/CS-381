@@ -15,3 +15,4 @@ make_includeable(assets/shaders/skybox.fs generated/skybox.fs)
 make_includeable(assets/shaders/skybox.vs generated/skybox.vs)
 
 configure_file(assets/textures/skybox.png textures/skybox.png COPYONLY)
+configure_file("assets/Kenny-Furniture-Kit/plantSmall1.glb" meshes/plantSmall1.glb COPYONLY)

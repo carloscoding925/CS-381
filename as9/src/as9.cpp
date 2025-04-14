@@ -84,25 +84,25 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
 
         bufferedInput["Forward"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.forward) {
-                physicsComponent.targetSpeed = physicsComponent.targetSpeed + 20.0f;
+                physicsComponent.targetSpeed = physicsComponent.targetSpeed + 40.0f;
                 inputStateComponent.forward = true;
             }
         });
         bufferedInput["Backward"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.backward) {
-                physicsComponent.targetSpeed = physicsComponent.targetSpeed - 20.0f;
+                physicsComponent.targetSpeed = physicsComponent.targetSpeed - 40.0f;
                 inputStateComponent.backward = true;
             }
         });
         bufferedInput["Left"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.left) {
-                physicsComponent.targetHeading = physicsComponent.targetHeading + raylib::Degree(15.0f);
+                physicsComponent.targetHeading = physicsComponent.targetHeading + raylib::Degree(30.0f);
                 inputStateComponent.left = true;
             }
         });
         bufferedInput["Right"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.right) {
-                physicsComponent.targetHeading = physicsComponent.targetHeading - raylib::Degree(15.0f);
+                physicsComponent.targetHeading = physicsComponent.targetHeading - raylib::Degree(30.0f);
                 inputStateComponent.right = true;
             }
         });
@@ -147,6 +147,37 @@ void UpdateCamera(raylib::Camera3D& camera, cs381::Scene<cs381::ComponentStorage
     camera.target = transformComponent.position;
 }
 
+void CheckCollision(cs381::Scene<cs381::ComponentStorage>& scene) {
+    if (!scene.HasComponent<TransformComponent>(0)) {
+        return;
+    }
+    if (!scene.HasComponent<TransformComponent>(1)) {
+        return;
+    }
+    if (!scene.HasComponent<RenderComponent>(0)) {
+        return;
+    }
+    if (!scene.HasComponent<RenderComponent>(1)) {
+        return;
+    }
+    auto& transformComponentPlayer = scene.GetComponent<TransformComponent>(0);
+    auto& transformComponentObject = scene.GetComponent<TransformComponent>(1);
+
+    auto& renderComponentPlayer = scene.GetComponent<RenderComponent>(0);
+    auto& renderComponentObject = scene.GetComponent<RenderComponent>(1);
+
+    float radius = 25.0f;
+    auto& playerPosition = transformComponentPlayer.position;
+    auto& objectPosition = transformComponentObject.position;
+    if (std::fabs(playerPosition.x - objectPosition.x) < radius && std::fabs(playerPosition.z - objectPosition.z) < radius) {
+        float x = std::rand() % 400 - 200;
+        float z = std::rand() % 400 - 200;
+        objectPosition.x = x;
+        objectPosition.z = z;
+        transformComponentObject.position = objectPosition;
+    }
+}
+
 int main() {
     const int windowHeight = 700;
     const int windowWidth = 1000;
@@ -162,6 +193,7 @@ int main() {
     grass.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grassTexture;
 
     raylib::Model plant("../assets/Kenny-Furniture-Kit/plantSmall1.glb");
+    raylib::Model broccoli("../assets/Kenny-Food-Kit/broccoli.glb");
 
     raylib::BufferedInput bufferedInput;
     bufferedInput["Forward"] = raylib::Action::key(KEY_W).move();
@@ -180,6 +212,13 @@ int main() {
     scene.AddComponent<InputStateComponent>(plantEntity);
     scene.AddComponent<PhysicsComponent>(plantEntity);
 
+    cs381::Entity broccoliEntity = scene.CreateEntity();
+    scene.AddComponent<RenderComponent>(broccoliEntity);
+    scene.GetComponent<RenderComponent>(broccoliEntity).model = &broccoli;
+    scene.AddComponent<TransformComponent>(broccoliEntity);
+    scene.GetComponent<TransformComponent>(broccoliEntity).position = raylib::Vector3{100.0f, 0.0f, 0.0f};
+    scene.GetComponent<TransformComponent>(broccoliEntity).scale = 160;
+
     while (!window.ShouldClose()) {
         bufferedInput.PollEvents();
 
@@ -194,6 +233,7 @@ int main() {
                 InputSystem(scene, bufferedInput);
                 UpdatePhysics(scene, window.GetFrameTime());
                 UpdateCamera(camera, scene);
+                CheckCollision(scene);
             }
             camera.EndMode();
         }

@@ -1,5 +1,9 @@
 # Assignment 9 - Carlos Hernandez - CS 381
 
+## Plant Simulator
+Welcome to Plant Simulator! You are a plant, and your quest is to collect as much biomass as you possibly <br />
+can. Move around the map and collect as many broccolis as possible! <br />
+
 ## How to Fetch the Raylib Submodule
 The following steps will guide you through pulling the repo from github and fetching the `raylib-cpp` submodule. <br />
 - Open a terminal & use your choice of git clone to clone this repo. For this tutorial i'll be using git clone through https.
@@ -26,3 +30,7 @@ The following steps will guide you through running the code for AS9. <br />
 - Congratulations! You've ran AS9.
 
 ## Controls Enumeration for AS9
+- **W**: Increase forward speed by 40
+- **S**: Decrease forward speed by 40, Increase Backwards speed by 40
+- **A**: Turn left by 30 degrees
+- **D**: Turn right by 30 degrees
