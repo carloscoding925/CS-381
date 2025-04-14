@@ -1,4 +1,204 @@
+#include <raylib-cpp.hpp>
+#include <BufferedRaylib.hpp>
+#include "Window.hpp"
+#include "../assets/skybox.hpp"
+#include <iostream>
+#include "ECS.hpp"
+
+size_t globalComponentCounter = 0;
+
+template <typename T>
+concept Transformer = requires(T t, raylib::Matrix m) {
+    { t(m) } -> std::convertible_to<raylib::Matrix>;
+};
+
+void DrawBoundedModel(raylib::Model& model, Transformer auto transformer) {
+    raylib::Matrix backup = model.transform;
+    model.transform = transformer(backup);
+    model.Draw({});
+    model.GetTransformedBoundingBox().Draw(raylib::Color::White());
+    model.transform = backup;
+}
+
+void DrawModel(raylib::Model& model, Transformer auto transformer) {
+    raylib::Matrix backup = model.transform;
+    model.transform = transformer(backup);
+    model.Draw({});
+    model.transform = backup;
+}
+
+struct RenderComponent {
+    raylib::Model* model = nullptr;
+};
+
+struct TransformComponent {
+    raylib::Vector3 position = {0.0f, 0.0f, 0.0f};
+    raylib::Degree heading = 0;
+    int scale = 0;
+};
+
+struct InputStateComponent {
+    bool forward = false;
+    bool backward = false;
+    bool left = false;
+    bool right = false;
+};
+
+struct PhysicsComponent {
+    raylib::Vector3 velocity = {0.0f, 0.0f, 0.0f};
+    float speed = 0.0f;
+    float targetSpeed = 0.0f;
+    raylib::Degree targetHeading = 0;
+};
+
+void RenderSystem(cs381::Scene<cs381::ComponentStorage>& scene) {
+    for (cs381::Entity e = 0; e < scene.entityMasks.size(); e++) {
+        if (!scene.HasComponent<RenderComponent>(e)) {
+            continue;
+        }
+        if (!scene.HasComponent<TransformComponent>(e)) {
+            continue;
+        }
+
+        auto& renderComponent = scene.GetComponent<RenderComponent>(e);
+        auto& transformComponent = scene.GetComponent<TransformComponent>(e);
+
+        DrawModel(*renderComponent.model, [&transformComponent](const raylib::Transform& m) -> raylib::Transform {
+            return m.Translate(transformComponent.position).Scale(transformComponent.scale).RotateY(transformComponent.heading);
+        });
+    }
+}
+
+void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedInput& bufferedInput) {
+    for (cs381::Entity e = 0; e < scene.entityMasks.size(); e++) {
+        if (!scene.HasComponent<InputStateComponent>(e)) {
+            return;
+        }
+        if (!scene.HasComponent<PhysicsComponent>(e)) {
+            return;
+        }
+    
+        auto& physicsComponent = scene.GetComponent<PhysicsComponent>(e);
+        auto& inputStateComponent = scene.GetComponent<InputStateComponent>(e);
+        int playerEntity = 0;
+
+        bufferedInput["Forward"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
+            if (e == playerEntity && !inputStateComponent.forward) {
+                physicsComponent.targetSpeed = physicsComponent.targetSpeed + 20.0f;
+                inputStateComponent.forward = true;
+            }
+        });
+        bufferedInput["Backward"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
+            if (e == playerEntity && !inputStateComponent.backward) {
+                physicsComponent.targetSpeed = physicsComponent.targetSpeed - 20.0f;
+                inputStateComponent.backward = true;
+            }
+        });
+        bufferedInput["Left"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
+            if (e == playerEntity && !inputStateComponent.left) {
+                physicsComponent.targetHeading = physicsComponent.targetHeading + raylib::Degree(15.0f);
+                inputStateComponent.left = true;
+            }
+        });
+        bufferedInput["Right"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
+            if (e == playerEntity && !inputStateComponent.right) {
+                physicsComponent.targetHeading = physicsComponent.targetHeading - raylib::Degree(15.0f);
+                inputStateComponent.right = true;
+            }
+        });
+
+        bufferedInput["Forward"].AddReleasedCallback([&inputStateComponent] {
+            inputStateComponent.forward = false;
+        });
+        bufferedInput["Backward"].AddReleasedCallback([&inputStateComponent] {
+            inputStateComponent.backward = false;
+        });
+        bufferedInput["Left"].AddReleasedCallback([&inputStateComponent] {
+            inputStateComponent.left = false;
+        });
+        bufferedInput["Right"].AddReleasedCallback([&inputStateComponent] {
+            inputStateComponent.right = false;
+        });
+    }
+}
+
+void UpdatePhysics(cs381::Scene<cs381::ComponentStorage>& scene, float dt) {
+    if (!scene.HasComponent<PhysicsComponent>(0)) {
+        return;
+    }
+    auto& transformComponent = scene.GetComponent<TransformComponent>(0);
+    auto& physicsComponent = scene.GetComponent<PhysicsComponent>(0);
+    
+    float radians =  DEG2RAD * (transformComponent.heading + raylib::Degree(270));
+    transformComponent.heading = std::lerp(transformComponent.heading, physicsComponent.targetHeading, dt);
+
+    physicsComponent.speed = std::lerp(physicsComponent.speed, physicsComponent.targetSpeed, dt);
+    physicsComponent.velocity = raylib::Vector3{ cos(radians) * physicsComponent.speed, 0.0f, -sin(radians) * physicsComponent.speed };
+
+    transformComponent.position = transformComponent.position + physicsComponent.velocity * dt;
+}
+
+void UpdateCamera(raylib::Camera3D& camera, cs381::Scene<cs381::ComponentStorage>& scene) {
+    if (!scene.HasComponent<TransformComponent>(0)) {
+        return;
+    }
+    auto& transformComponent = scene.GetComponent<TransformComponent>(0);
+    camera.position = transformComponent.position + raylib::Vector3{0.0f, 180.0f, -500.0f};
+    camera.target = transformComponent.position;
+}
+
 int main() {
+    const int windowHeight = 700;
+    const int windowWidth = 1000;
+    std::string title = "CS381 - Assignment 9";
+    raylib::Window window(windowWidth, windowHeight, title);
+    window.SetState(FLAG_WINDOW_RESIZABLE);
+
+    cs381::SkyBox sky("textures/skybox.png");
+    raylib::Camera3D camera(raylib::Vector3{0.0f, 180.0f, -500.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
+
+    raylib::Model grass = raylib::Mesh::Plane(1000, 1000, 1, 1).LoadModelFrom();
+    raylib::Texture grassTexture = raylib::Texture("../assets/textures/grass.png");
+    grass.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grassTexture;
+
+    raylib::Model plant("../assets/Kenny-Furniture-Kit/plantSmall1.glb");
+
+    raylib::BufferedInput bufferedInput;
+    bufferedInput["Forward"] = raylib::Action::key(KEY_W).move();
+    bufferedInput["Backward"] = raylib::Action::key(KEY_S).move();
+    bufferedInput["Left"] = raylib::Action::key(KEY_A).move();
+    bufferedInput["Right"] = raylib::Action::key(KEY_D).move();
+
+    cs381::Scene<cs381::ComponentStorage> scene;
+
+    cs381::Entity plantEntity = scene.CreateEntity();
+    scene.AddComponent<RenderComponent>(plantEntity);
+    scene.GetComponent<RenderComponent>(plantEntity).model = &plant;
+    scene.AddComponent<TransformComponent>(plantEntity);
+    scene.GetComponent<TransformComponent>(plantEntity).position = raylib::Vector3{0.0f, 0.0f, 0.0f};
+    scene.GetComponent<TransformComponent>(plantEntity).scale = 160;
+    scene.AddComponent<InputStateComponent>(plantEntity);
+    scene.AddComponent<PhysicsComponent>(plantEntity);
+
+    while (!window.ShouldClose()) {
+        bufferedInput.PollEvents();
+
+        window.BeginDrawing();
+        {
+            camera.BeginMode();
+            {
+                window.ClearBackground(raylib::Color::White());
+                sky.Draw();
+                grass.Draw({});
+                RenderSystem(scene);
+                InputSystem(scene, bufferedInput);
+                UpdatePhysics(scene, window.GetFrameTime());
+                UpdateCamera(camera, scene);
+            }
+            camera.EndMode();
+        }
+        window.EndDrawing();
+    }
 
     return 0;
 }
