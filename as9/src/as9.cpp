@@ -158,7 +158,7 @@ void UpdateCamera(raylib::Camera3D& camera, cs381::Scene<cs381::ComponentStorage
     camera.target = transformComponent.position;
 }
 
-void CheckCollision(cs381::Scene<cs381::ComponentStorage>& scene, BroccoliCounterState* broccoliState) {
+void CheckCollision(cs381::Scene<cs381::ComponentStorage>& scene, BroccoliCounterState* broccoliState, Sound flappyBroccoli) {
     if (!scene.HasComponent<TransformComponent>(0)) {
         return;
     }
@@ -187,6 +187,7 @@ void CheckCollision(cs381::Scene<cs381::ComponentStorage>& scene, BroccoliCounte
         objectPosition.z = z;
         transformComponentObject.position = objectPosition;
         broccoliState->broccoliCounter++;
+        PlaySound(flappyBroccoli);
     }
 
     if (playerPosition.x > 100) {
@@ -210,6 +211,13 @@ int main() {
     std::string title = "CS381 - Assignment 9";
     raylib::Window window(windowWidth, windowHeight, title);
     window.SetState(FLAG_WINDOW_RESIZABLE);
+
+    raylib::AudioDevice audioDevice;
+    Sound flappyBroccoli = LoadSound("../assets/audio/flappy-sound.mp3");
+    raylib::Music gravel = LoadMusicStream("../assets/audio/gravel.mp3");
+
+    gravel.SetLooping(true);
+    PlayMusicStream(gravel);
 
     cs381::SkyBox sky("textures/skybox.png");
     raylib::Camera3D camera(raylib::Vector3{0.0f, 20.0f, -40.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
@@ -249,6 +257,9 @@ int main() {
 
     while (!window.ShouldClose()) {
         bufferedInput.PollEvents();
+        SetSoundVolume(flappyBroccoli, 0.5f);
+        SetMusicVolume(gravel, 0.5f);
+        UpdateMusicStream(gravel);
 
         window.BeginDrawing();
         {
@@ -262,7 +273,7 @@ int main() {
                     InputSystem(scene, bufferedInput);
                     UpdatePhysics(scene, window.GetFrameTime());
                     UpdateCamera(camera, scene);
-                    CheckCollision(scene, &broccoliState);
+                    CheckCollision(scene, &broccoliState, flappyBroccoli);
                 }
             }
             camera.EndMode();
@@ -270,6 +281,9 @@ int main() {
         }
         window.EndDrawing();
     }
+    UnloadSound(flappyBroccoli);
+    UnloadMusicStream(gravel);
+    audioDevice.Close();
 
     return 0;
 }
