@@ -4,6 +4,7 @@
 #include "../assets/skybox.hpp"
 #include <iostream>
 #include "ECS.hpp"
+#include "BroccoliCounter.h"
 
 size_t globalComponentCounter = 0;
 
@@ -80,23 +81,24 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
     
         auto& physicsComponent = scene.GetComponent<PhysicsComponent>(e);
         auto& inputStateComponent = scene.GetComponent<InputStateComponent>(e);
+        auto& transformComponent = scene.GetComponent<TransformComponent>(e);
         int playerEntity = 0;
 
         bufferedInput["Forward"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.forward) {
-                physicsComponent.targetSpeed = physicsComponent.targetSpeed + 40.0f;
+                physicsComponent.targetSpeed = 20.0f;
                 inputStateComponent.forward = true;
             }
         });
         bufferedInput["Backward"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.backward) {
-                physicsComponent.targetSpeed = physicsComponent.targetSpeed - 40.0f;
+                physicsComponent.targetSpeed = -20.0f;
                 inputStateComponent.backward = true;
             }
         });
-        bufferedInput["Left"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
+        bufferedInput["Left"].AddPressedCallback([&inputStateComponent, &transformComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.left) {
-                physicsComponent.targetHeading = physicsComponent.targetHeading + raylib::Degree(30.0f);
+                transformComponent.heading = transformComponent.heading + raylib::Degree(1.0f);
                 inputStateComponent.left = true;
             }
         });
@@ -107,10 +109,12 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
             }
         });
 
-        bufferedInput["Forward"].AddReleasedCallback([&inputStateComponent] {
+        bufferedInput["Forward"].AddReleasedCallback([&physicsComponent, &inputStateComponent] {
+            physicsComponent.targetSpeed = 0.0f;
             inputStateComponent.forward = false;
         });
-        bufferedInput["Backward"].AddReleasedCallback([&inputStateComponent] {
+        bufferedInput["Backward"].AddReleasedCallback([&physicsComponent, &inputStateComponent] {
+            physicsComponent.targetSpeed = 0.0f;
             inputStateComponent.backward = false;
         });
         bufferedInput["Left"].AddReleasedCallback([&inputStateComponent] {
@@ -143,11 +147,11 @@ void UpdateCamera(raylib::Camera3D& camera, cs381::Scene<cs381::ComponentStorage
         return;
     }
     auto& transformComponent = scene.GetComponent<TransformComponent>(0);
-    camera.position = transformComponent.position + raylib::Vector3{0.0f, 180.0f, -500.0f};
+    camera.position = transformComponent.position + raylib::Vector3{0.0f, 20.0f, -40.0f};
     camera.target = transformComponent.position;
 }
 
-void CheckCollision(cs381::Scene<cs381::ComponentStorage>& scene) {
+void CheckCollision(cs381::Scene<cs381::ComponentStorage>& scene, BroccoliCounterState* broccoliState) {
     if (!scene.HasComponent<TransformComponent>(0)) {
         return;
     }
@@ -166,16 +170,31 @@ void CheckCollision(cs381::Scene<cs381::ComponentStorage>& scene) {
     auto& renderComponentPlayer = scene.GetComponent<RenderComponent>(0);
     auto& renderComponentObject = scene.GetComponent<RenderComponent>(1);
 
-    float radius = 25.0f;
+    float radius = 3.0f;
     auto& playerPosition = transformComponentPlayer.position;
     auto& objectPosition = transformComponentObject.position;
     if (std::fabs(playerPosition.x - objectPosition.x) < radius && std::fabs(playerPosition.z - objectPosition.z) < radius) {
-        float x = std::rand() % 400 - 200;
-        float z = std::rand() % 400 - 200;
+        float x = std::rand() % 200 - 100;
+        float z = std::rand() % 200 - 100;
         objectPosition.x = x;
         objectPosition.z = z;
         transformComponentObject.position = objectPosition;
+        broccoliState->broccoliCounter++;
     }
+
+    if (playerPosition.x > 100) {
+        playerPosition.x = 100;
+    }
+    if (playerPosition.x < -100) {
+        playerPosition.x = -100;
+    }
+    if (playerPosition.z > 100) {
+        playerPosition.z = 100;
+    }
+    if (playerPosition.z < -100) {
+        playerPosition.z = -100;
+    }
+    transformComponentPlayer.position = playerPosition;
 }
 
 int main() {
@@ -186,11 +205,13 @@ int main() {
     window.SetState(FLAG_WINDOW_RESIZABLE);
 
     cs381::SkyBox sky("textures/skybox.png");
-    raylib::Camera3D camera(raylib::Vector3{0.0f, 180.0f, -500.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
+    raylib::Camera3D camera(raylib::Vector3{0.0f, 20.0f, -40.0f}, raylib::Vector3{0.0f, 0.0f, 0.0f}, raylib::Vector3{0.0f, 1.0f, 0.0f}, 45.0f, CAMERA_PERSPECTIVE);
 
-    raylib::Model grass = raylib::Mesh::Plane(1000, 1000, 1, 1).LoadModelFrom();
+    raylib::Model grass = raylib::Mesh::Plane(200, 200, 1, 1).LoadModelFrom();
     raylib::Texture grassTexture = raylib::Texture("../assets/textures/grass.png");
     grass.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grassTexture;
+
+    BroccoliCounterState broccoliState = InitBroccoliCounter();
 
     raylib::Model plant("../assets/Kenny-Furniture-Kit/plantSmall1.glb");
     raylib::Model broccoli("../assets/Kenny-Food-Kit/broccoli.glb");
@@ -208,7 +229,7 @@ int main() {
     scene.GetComponent<RenderComponent>(plantEntity).model = &plant;
     scene.AddComponent<TransformComponent>(plantEntity);
     scene.GetComponent<TransformComponent>(plantEntity).position = raylib::Vector3{0.0f, 0.0f, 0.0f};
-    scene.GetComponent<TransformComponent>(plantEntity).scale = 160;
+    scene.GetComponent<TransformComponent>(plantEntity).scale = 10;
     scene.AddComponent<InputStateComponent>(plantEntity);
     scene.AddComponent<PhysicsComponent>(plantEntity);
 
@@ -216,8 +237,8 @@ int main() {
     scene.AddComponent<RenderComponent>(broccoliEntity);
     scene.GetComponent<RenderComponent>(broccoliEntity).model = &broccoli;
     scene.AddComponent<TransformComponent>(broccoliEntity);
-    scene.GetComponent<TransformComponent>(broccoliEntity).position = raylib::Vector3{100.0f, 0.0f, 0.0f};
-    scene.GetComponent<TransformComponent>(broccoliEntity).scale = 160;
+    scene.GetComponent<TransformComponent>(broccoliEntity).position = raylib::Vector3{10.0f, 0.0f, 0.0f};
+    scene.GetComponent<TransformComponent>(broccoliEntity).scale = 10;
 
     while (!window.ShouldClose()) {
         bufferedInput.PollEvents();
@@ -230,12 +251,15 @@ int main() {
                 sky.Draw();
                 grass.Draw({});
                 RenderSystem(scene);
-                InputSystem(scene, bufferedInput);
-                UpdatePhysics(scene, window.GetFrameTime());
-                UpdateCamera(camera, scene);
-                CheckCollision(scene);
+                if (broccoliState.startGame) {
+                    InputSystem(scene, bufferedInput);
+                    UpdatePhysics(scene, window.GetFrameTime());
+                    UpdateCamera(camera, scene);
+                    CheckCollision(scene, &broccoliState);
+                }
             }
             camera.EndMode();
+            GuiBroccoliCounter(&broccoliState);
         }
         window.EndDrawing();
     }
