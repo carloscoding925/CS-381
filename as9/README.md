@@ -30,7 +30,10 @@ The following steps will guide you through running the code for AS9. <br />
 - Congratulations! You've ran AS9.
 
 ## Controls Enumeration for AS9
-- **W**: Increase forward speed by 40
-- **S**: Decrease forward speed by 40, Increase Backwards speed by 40
-- **A**: Turn left by 30 degrees
-- **D**: Turn right by 30 degrees
+- **W**: HOLD W to move forward at a speed of 20. Releasing will slow you down to 0
+- **S**: HOLD S to move backwards at a speed of 20. Releasing will slow you down to 0
+- **A**: HOLD A to turn left.
+- **D**: HOLD D to turn right.
+
+## Extra Credit
+- Start Button
