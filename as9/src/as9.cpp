@@ -50,6 +50,7 @@ struct PhysicsComponent {
     float speed = 0.0f;
     float targetSpeed = 0.0f;
     raylib::Degree targetHeading = 0;
+    float rotationSpeed = 0.0f;
 };
 
 void RenderSystem(cs381::Scene<cs381::ComponentStorage>& scene) {
@@ -82,6 +83,7 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
         auto& physicsComponent = scene.GetComponent<PhysicsComponent>(e);
         auto& inputStateComponent = scene.GetComponent<InputStateComponent>(e);
         auto& transformComponent = scene.GetComponent<TransformComponent>(e);
+
         int playerEntity = 0;
 
         bufferedInput["Forward"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
@@ -96,15 +98,15 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
                 inputStateComponent.backward = true;
             }
         });
-        bufferedInput["Left"].AddPressedCallback([&inputStateComponent, &transformComponent, e, playerEntity] {
+        bufferedInput["Left"].AddPressedCallback([&inputStateComponent, &transformComponent, &physicsComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.left) {
-                transformComponent.heading = transformComponent.heading + raylib::Degree(1.0f);
+                physicsComponent.rotationSpeed = 180.0f;
                 inputStateComponent.left = true;
             }
         });
         bufferedInput["Right"].AddPressedCallback([&inputStateComponent, &physicsComponent, e, playerEntity] {
             if (e == playerEntity && !inputStateComponent.right) {
-                physicsComponent.targetHeading = physicsComponent.targetHeading - raylib::Degree(30.0f);
+                physicsComponent.rotationSpeed = -180.0f;
                 inputStateComponent.right = true;
             }
         });
@@ -117,10 +119,12 @@ void InputSystem(cs381::Scene<cs381::ComponentStorage>& scene, raylib::BufferedI
             physicsComponent.targetSpeed = 0.0f;
             inputStateComponent.backward = false;
         });
-        bufferedInput["Left"].AddReleasedCallback([&inputStateComponent] {
+        bufferedInput["Left"].AddReleasedCallback([&physicsComponent, &transformComponent, &inputStateComponent] {
+            physicsComponent.rotationSpeed = 0.0f;
             inputStateComponent.left = false;
         });
-        bufferedInput["Right"].AddReleasedCallback([&inputStateComponent] {
+        bufferedInput["Right"].AddReleasedCallback([&physicsComponent, &transformComponent, &inputStateComponent] {
+            physicsComponent.rotationSpeed = 0.0f;
             inputStateComponent.right = false;
         });
     }
@@ -133,8 +137,11 @@ void UpdatePhysics(cs381::Scene<cs381::ComponentStorage>& scene, float dt) {
     auto& transformComponent = scene.GetComponent<TransformComponent>(0);
     auto& physicsComponent = scene.GetComponent<PhysicsComponent>(0);
     
-    float radians =  DEG2RAD * (transformComponent.heading + raylib::Degree(270));
-    transformComponent.heading = std::lerp(transformComponent.heading, physicsComponent.targetHeading, dt);
+    transformComponent.heading += physicsComponent.rotationSpeed * dt;
+    while (transformComponent.heading >= 360.0f) transformComponent.heading -= 360.0f;
+    while (transformComponent.heading < 0.0f) transformComponent.heading += 360.0f;
+
+    float radians = DEG2RAD * (transformComponent.heading + raylib::Degree(270));
 
     physicsComponent.speed = std::lerp(physicsComponent.speed, physicsComponent.targetSpeed, dt);
     physicsComponent.velocity = raylib::Vector3{ cos(radians) * physicsComponent.speed, 0.0f, -sin(radians) * physicsComponent.speed };
